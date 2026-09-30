@@ -9,10 +9,10 @@ Probo model -> bundle:
   Measures (what the org implemented)       -> controls.csv rows, criteria via control links
   Measure evidences (files and links)       -> evidence artifacts
   Documents (policies, latest published version, linked to a framework
-  control or to a measure, with signature states) -> policy artifacts
+  control or to a measure, with approver and signature states) -> policy artifacts
   People (contract start / end)             -> hires and terminations populations
   Third parties                             -> vendors population
-  Risks, access review campaigns            -> evidence exports (JSON)
+  Risks, access review campaigns and entries -> evidence exports (JSON)
   Organization context                      -> draft system.yaml for management
 
 Options (engagement.yaml source.options):
@@ -134,8 +134,25 @@ def evidence_file(base: str, token: str, evidence_id: str) -> dict | None:
     return file
 
 
-def signature_line(signatures: list, signers: dict) -> str:
+def approval_line(decisions: list, signers: dict, error: str | None = None) -> str:
+    """Name the approver. PUBLISHED does not. A failed call is not written as 'none recorded'."""
+    if error:
+        return f"Approval: not retrieved ({error})"
+    approved = [d for d in decisions if d.get("state") == "APPROVED"]
+    if not approved:
+        return "Approval: none recorded on this version"
+    parts = []
+    for decision in approved:
+        who = signers.get(decision.get("approver_id"), decision.get("approver_id") or "unknown")
+        when = (decision.get("decided_at") or "")[:10]
+        parts.append(f"{who} APPROVED" + (f" {when}" if when else ""))
+    return "Approval: " + "; ".join(parts)
+
+
+def signature_line(signatures: list, signers: dict, error: str | None = None) -> str:
     """One line an auditor can check without opening Probo. Names come from the people export when the signatory id matches."""
+    if error:
+        return f"Signatures: not retrieved ({error})"
     if not signatures:
         return "Signatures: none recorded on this version"
     parts = []
@@ -271,14 +288,18 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
     signers = {p["id"]: p.get("full_name") or p.get("email_address") or p["id"] for p in people}
     failed_tools = set()
 
-    def listed(tool: str, key: str, **arguments) -> list:
+    def fetch(tool: str, key: str, **arguments) -> tuple[list, str | None]:
         try:
-            return list(api.pages(tool, key, **arguments))
+            return list(api.pages(tool, key, **arguments)), None
         except AuditError as e:
             if tool not in failed_tools:
                 writer.warn(f"{tool}: {e}")
                 failed_tools.add(tool)
-            return []
+            return [], str(e)
+
+    def listed(tool: str, key: str, **arguments) -> list:
+        items, _error = fetch(tool, key, **arguments)
+        return items
 
     docs: dict[str, dict] = {}
     doc_controls: dict[str, set[str]] = {}
@@ -306,13 +327,34 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
             continue
         latest = max(published, key=lambda v: (v.get("major", 0), v.get("minor", 0)))
         full = api.call("getDocumentVersion", id=latest["id"]).get("document_version", latest)
-        signatures = listed("listDocumentVersionSignatures", "document_version_signatures", document_version_id=latest["id"])
+        version_id = latest["id"]
+        order = {"field": "CREATED_AT", "direction": "DESC"}
+        quorums, quorum_error = fetch(
+            "listDocumentVersionApprovalQuorums", "approval_quorums",
+            document_version_id=version_id, order_by=order,
+        )
+        decisions: list = []
+        decision_error = quorum_error
+        if quorum_error is None:
+            for quorum in quorums:
+                got, err = fetch(
+                    "listDocumentVersionApprovalDecisions", "approval_decisions",
+                    quorum_id=quorum["id"], order_by={"field": "CREATED_AT", "direction": "ASC"},
+                )
+                decisions.extend(got)
+                if err and decision_error is None:
+                    decision_error = err
+        signatures, signature_error = fetch(
+            "listDocumentVersionSignatures", "document_version_signatures",
+            document_version_id=version_id,
+        )
         title = full.get("title") or doc.get("title") or "Document"
         body = (
             f"# {title}\n\n"
             f"Version {full.get('major')}.{full.get('minor')}, status {full.get('status') or 'unknown'}, "
             f"published {full.get('published_at') or 'n/a'}\n\n"
-            f"{signature_line(signatures, signers)}\n\n"
+            f"{approval_line(decisions, signers, decision_error)}\n\n"
+            f"{signature_line(signatures, signers, signature_error)}\n\n"
             f"{full.get('content') or ''}"
         )
         writer.add_bytes(body, f"{slug(title)}.md", title=f"Policy: {title}", kind="policy",
@@ -320,13 +362,37 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
                          obtained="direct", source_ref=f"probo:document/{doc_id}")
 
     # 6. Registers useful for risk assessment and access review controls.
-    for tool, key, title in (("listRisks", "risks", "Risk register (Probo)"), ("listAccessReviewCampaigns", "campaigns", "Access review campaigns (Probo)")):
-        try:
-            items = list(api.pages(tool, key, organization_id=org))
-        except AuditError as e:
-            writer.warn(f"{tool}: {e}")
+    try:
+        risks = list(api.pages("listRisks", "risks", organization_id=org))
+    except AuditError as e:
+        writer.warn(f"listRisks: {e}")
+    else:
+        writer.add_bytes(json.dumps(risks, indent=2), f"{slug('Risk register (Probo)')}.json", title="Risk register (Probo)", source_ref="probo:listRisks")
+
+    try:
+        campaigns = list(api.pages("listAccessReviewCampaigns", "campaigns", organization_id=org))
+    except AuditError as e:
+        writer.warn(f"listAccessReviewCampaigns: {e}")
+        campaigns = []
+    else:
+        writer.add_bytes(json.dumps(campaigns, indent=2), f"{slug('Access review campaigns (Probo)')}.json", title="Access review campaigns (Probo)", source_ref="probo:listAccessReviewCampaigns")
+
+    entry_fields = (
+        "source_name", "email", "full_name", "account_type", "roles", "is_admin",
+        "mfa_status", "auth_method", "decision", "flags", "decided_at", "active",
+    )
+    for camp in campaigns:
+        entries, err = fetch("listAccessEntries", "access_entries", campaign_id=camp["id"])
+        if err:
             continue
-        writer.add_bytes(json.dumps(items, indent=2), f"{slug(title)}.json", title=title, source_ref=f"probo:{tool}")
+        slim = [{field: entry.get(field) for field in entry_fields} for entry in entries]
+        name = camp.get("name") or camp["id"]
+        writer.add_bytes(
+            json.dumps({"campaign_id": camp["id"], "name": name, "status": camp.get("status"), "entries": slim}, indent=2),
+            f"access-review-entries-{slug(name)}.json",
+            title=f"Access review entries: {name}",
+            source_ref=f"probo:listAccessEntries/{camp['id']}",
+        )
 
     # 7. Draft system description from the organization context. Management must review it.
     try:

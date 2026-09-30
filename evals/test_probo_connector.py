@@ -104,6 +104,13 @@ def call_tool(state: dict, name: str, args: dict) -> dict:
         signer = state["users"][0]["id"]
         return {"document_version_signatures": [{"id": f"sig_{doc_id}", "document_version_id": args["document_version_id"],
                                                  "state": "SIGNED", "signed_by": signer, "signed_at": "2026-09-28T12:00:00Z"}]}
+    if name == "listDocumentVersionApprovalQuorums":
+        return {"approval_quorums": [{"id": "quorum_1", "status": "APPROVED", "version_id": args["document_version_id"]}]}
+    if name == "listDocumentVersionApprovalDecisions":
+        signer = state["users"][0]["id"]
+        return {"approval_decisions": [{"id": "dec_1", "approver_id": signer, "state": "APPROVED", "decided_at": "2026-09-28T12:00:00Z"}]}
+    if name == "listAccessEntries":
+        return {"access_entries": []}
     if name == "listUsers":
         return {"users": state["users"]}
     if name == "listThirdParties":
@@ -208,7 +215,7 @@ def main() -> int:
             control_only = [a for a in policy_arts if a["title"] == "Policy: Control linked only"]
             policy_text = (eng / "bundle" / control_only[0]["path"]).read_text() if control_only else ""
             signer = read_csv(fixture / "export" / "populations" / "hires.csv")[0]["name"]
-            signed = "SIGNED 2026-09-28" in policy_text and signer in policy_text
+            signed = "SIGNED 2026-09-28" in policy_text and "APPROVED 2026-09-28" in policy_text and signer in policy_text
             hidden = list((eng / "bundle" / "evidence").glob("*mfa-screenshot.png"))
             hidden_ok = len(hidden) == 1 and hidden[0].read_bytes() == b"PNG-MFA-SCREENSHOT"
             ok = (len(controls) == 26 and kinds.get("evidence", 0) >= 135 and len(policy_arts) == 13
