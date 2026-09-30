@@ -53,8 +53,14 @@ def build_state(export: Path) -> dict:
                                             "created_at": ts, "updated_at": ts})
     for path in sorted((export / "policies").glob("*.md")):
         m = meta[f"policies/{path.name}"]
-        doc = {"id": f"doc_{path.stem}", "controls": m["controls"].split(), "title": m["title"].replace("Policy: ", ""), "content": path.read_text()}
+        doc = {"id": f"doc_{path.stem}", "controls": m["controls"].split(), "framework_controls": [],
+               "title": m["title"].replace("Policy: ", ""), "content": path.read_text()}
         state["documents"][doc["id"]] = doc
+    # One policy hangs off the framework control itself. The other twelve hang off measures only.
+    state["documents"]["doc_control_only"] = {
+        "id": "doc_control_only", "controls": [], "framework_controls": [f"ctl_{criteria[0]}"],
+        "title": "Control linked only", "content": "Direct framework-control link.",
+    }
     pops = {n: read_csv(export / "populations" / f"{n}.csv") for n in ("hires", "terminations", "vendors")}
     state["users"] = ([{"id": f"usr_{h['id']}", "full_name": h["name"], "email_address": "", "state": "ACTIVE", "contract": {"start": h["date"], "end": None}} for h in pops["hires"]]
                       + [{"id": f"usr_{t['id']}", "full_name": t["name"], "email_address": "", "state": "DEACTIVATED", "contract": {"start": "2023-01-09", "end": t["date"]}} for t in pops["terminations"]])
@@ -75,15 +81,21 @@ def call_tool(state: dict, name: str, args: dict) -> dict:
     if name == "listMeasureEvidences":
         return {"evidences": state["evidences"][args["measure_id"].removeprefix("msr_")]}
     if name == "listControlDocuments":
-        crit = req_by_id[args["control_id"]]["section_title"]
-        cids = set(state["req_measures"][crit])
-        return {"documents": [{"id": d["id"]} for d in state["documents"].values() if cids & set(d["controls"])]}
+        return {"documents": [{"id": d["id"]} for d in state["documents"].values() if args["control_id"] in d.get("framework_controls", [])]}
+    if name == "listMeasureDocuments":
+        cid = args["measure_id"].removeprefix("msr_")
+        return {"documents": [{"id": d["id"]} for d in state["documents"].values() if cid in d["controls"]]}
     if name == "listDocumentVersions":
         d = state["documents"][args["document_id"]]
         return {"document_versions": [{"id": f"ver_{d['id']}", "status": "PUBLISHED", "major": 4, "minor": 2, "title": d["title"]}]}
     if name == "getDocumentVersion":
         d = state["documents"][args["id"].removeprefix("ver_")]
         return {"document_version": {"id": args["id"], "title": d["title"], "major": 4, "minor": 2, "status": "PUBLISHED", "content": d["content"], "published_at": "2026-01-15T00:00:00Z"}}
+    if name == "listDocumentVersionSignatures":
+        doc_id = args["document_version_id"].removeprefix("ver_")
+        signer = state["users"][0]["id"]
+        return {"document_version_signatures": [{"id": f"sig_{doc_id}", "document_version_id": args["document_version_id"],
+                                                 "state": "SIGNED", "signed_by": signer, "signed_at": "2026-09-28T12:00:00Z"}]}
     if name == "listUsers":
         return {"users": state["users"]}
     if name == "listThirdParties":
@@ -174,8 +186,14 @@ def main() -> int:
             for art in manifest["artifacts"]:
                 kinds[art["kind"]] = kinds.get(art["kind"], 0) + 1
             controls = read_csv(eng / "bundle" / "controls.csv")
-            ok = len(controls) == 26 and kinds.get("evidence", 0) >= 135 and kinds.get("policy") == 12 and kinds.get("population") == 3
-            print(f"controls={len(controls)} artifacts={kinds} -> {'OK' if ok else 'UNEXPECTED'}")
+            policy_arts = [a for a in manifest["artifacts"] if a["kind"] == "policy"]
+            control_only = [a for a in policy_arts if a["title"] == "Policy: Control linked only"]
+            policy_text = (eng / "bundle" / control_only[0]["path"]).read_text() if control_only else ""
+            signer = read_csv(fixture / "export" / "populations" / "hires.csv")[0]["name"]
+            signed = "SIGNED 2026-09-28" in policy_text and signer in policy_text
+            ok = (len(controls) == 26 and kinds.get("evidence", 0) >= 135 and len(policy_arts) == 13
+                  and kinds.get("population") == 3 and signed)
+            print(f"controls={len(controls)} artifacts={kinds} signed={signed} -> {'OK' if ok else 'UNEXPECTED'}")
     server.shutdown()
     return 0 if ok else 1
 

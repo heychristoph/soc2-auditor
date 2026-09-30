@@ -8,7 +8,8 @@ Probo model -> bundle:
   Framework "SOC 2" controls (e.g. CC6.1)  -> criteria
   Measures (what the org implemented)       -> controls.csv rows, criteria via control links
   Measure evidences (files and links)       -> evidence artifacts
-  Documents (policies, latest version)      -> policy artifacts
+  Documents (policies, latest published version, linked to a framework
+  control or to a measure, with signature states) -> policy artifacts
   People (contract start / end)             -> hires and terminations populations
   Third parties                             -> vendors population
   Risks, access review campaigns            -> evidence exports (JSON)
@@ -105,6 +106,18 @@ class ProboMCP:
         if reply.get("error"):
             raise AuditError(f"Probo MCP {method} error: {reply['error'].get('message')}")
         return reply.get("result", {})
+
+
+def signature_line(signatures: list, signers: dict) -> str:
+    """One line an auditor can check without opening Probo. Names come from the people export when the signatory id matches."""
+    if not signatures:
+        return "Signatures: none recorded on this version"
+    parts = []
+    for sig in signatures:
+        who = signers.get(sig.get("signed_by"), sig.get("signed_by") or "unknown")
+        when = (sig.get("signed_at") or sig.get("requested_at") or "")[:10]
+        parts.append(f"{who} {sig.get('state') or 'UNKNOWN'}" + (f" {when}" if when else ""))
+    return "Signatures: " + "; ".join(parts)
 
 
 def pull(writer: BundleWriter, options: dict, engagement) -> None:
@@ -213,23 +226,59 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
             headers = {"Authorization": f"Bearer {token}"} if url.startswith(base) else None
             writer.add_download(url, name, title=title, headers=headers, controls=[cid], date=date, obtained="direct", source_ref=ref)
 
-    # 5. Policies: latest published version of each document linked to a requirement.
-    seen_docs = set()
+    # 5. Policies. Probo links a document either to a framework control or to a
+    # measure (the usual place for a signed policy). Both have to be read; a
+    # document is stored once, against every control it reaches.
+    signers = {p["id"]: p.get("full_name") or p.get("email_address") or p["id"] for p in people}
+    failed_tools = set()
+
+    def listed(tool: str, key: str, **arguments) -> list:
+        try:
+            return list(api.pages(tool, key, **arguments))
+        except AuditError as e:
+            if tool not in failed_tools:
+                writer.warn(f"{tool}: {e}")
+                failed_tools.add(tool)
+            return []
+
+    docs: dict[str, dict] = {}
+    doc_controls: dict[str, set[str]] = {}
+
+    def remember(doc: dict, control_ids: list[str]) -> None:
+        doc_id = doc.get("id")
+        if not doc_id:
+            return
+        docs.setdefault(doc_id, doc)
+        doc_controls.setdefault(doc_id, set()).update(control_ids)
+
     for req in requirements:
         linked = [control_id[mid] for mid in requirement_measures.get(req["id"], [])]
-        for doc in api.pages("listControlDocuments", "documents", control_id=req["id"]):
-            if doc["id"] in seen_docs:
-                continue
-            seen_docs.add(doc["id"])
-            versions = list(api.pages("listDocumentVersions", "document_versions", document_id=doc["id"]))
-            published = [v for v in versions if v.get("status") == "PUBLISHED"] or versions
-            if not published:
-                continue
-            latest = max(published, key=lambda v: (v.get("major", 0), v.get("minor", 0)))
-            full = api.call("getDocumentVersion", id=latest["id"]).get("document_version", latest)
-            body = f"# {full.get('title', 'Document')}\n\nVersion {full.get('major')}.{full.get('minor')}, published {full.get('published_at') or 'n/a'}\n\n{full.get('content') or ''}"
-            writer.add_bytes(body, f"{slug(full.get('title', doc['id']))}.md", title=f"Policy: {full.get('title')}", kind="policy",
-                             controls=linked, date=(full.get("published_at") or "")[:10] or None, obtained="direct", source_ref=f"probo:document/{doc['id']}")
+        for doc in listed("listControlDocuments", "documents", control_id=req["id"]):
+            remember(doc, linked)
+    for m in ordered:
+        for doc in listed("listMeasureDocuments", "documents", measure_id=m["id"]):
+            remember(doc, [control_id[m["id"]]])
+
+    for doc_id, doc in docs.items():
+        versions = listed("listDocumentVersions", "document_versions", document_id=doc_id)
+        published = [v for v in versions if v.get("status") == "PUBLISHED"] or versions
+        if not published:
+            writer.warn(f"document '{doc.get('title') or doc_id}' has no version")
+            continue
+        latest = max(published, key=lambda v: (v.get("major", 0), v.get("minor", 0)))
+        full = api.call("getDocumentVersion", id=latest["id"]).get("document_version", latest)
+        signatures = listed("listDocumentVersionSignatures", "document_version_signatures", document_version_id=latest["id"])
+        title = full.get("title") or doc.get("title") or "Document"
+        body = (
+            f"# {title}\n\n"
+            f"Version {full.get('major')}.{full.get('minor')}, status {full.get('status') or 'unknown'}, "
+            f"published {full.get('published_at') or 'n/a'}\n\n"
+            f"{signature_line(signatures, signers)}\n\n"
+            f"{full.get('content') or ''}"
+        )
+        writer.add_bytes(body, f"{slug(title)}.md", title=f"Policy: {title}", kind="policy",
+                         controls=sorted(doc_controls[doc_id]), date=(full.get("published_at") or "")[:10] or None,
+                         obtained="direct", source_ref=f"probo:document/{doc_id}")
 
     # 6. Registers useful for risk assessment and access review controls.
     for tool, key, title in (("listRisks", "risks", "Risk register (Probo)"), ("listAccessReviewCampaigns", "campaigns", "Access review campaigns (Probo)")):

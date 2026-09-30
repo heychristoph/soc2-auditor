@@ -265,6 +265,7 @@ def _compile_pdf(data: dict, out: Path) -> None:
         raise AuditError("The `typst` Python package is required: pip install -r scripts/requirements.txt") from e
     with tempfile.TemporaryDirectory() as tmp:
         shutil.copyfile(ASSETS / "report" / "report.typ", Path(tmp) / "report.typ")
+        shutil.copyfile(ASSETS / "report" / "logo.svg", Path(tmp) / "logo.svg")
         dump_json(data, Path(tmp) / "data.json")
         typst.compile(str(Path(tmp) / "report.typ"), output=str(out))
 

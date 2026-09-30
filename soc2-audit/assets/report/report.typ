@@ -75,6 +75,8 @@
 
 // Cover
 #page(header: none, footer: none, margin: (x: 1.1in, y: 1.2in), {
+  image("logo.svg", width: 1.45in)
+  v(0.85em)
   text(10pt, tracking: 0.14em, fill: muted)[AI AUDIT]
   v(0.35em)
   text(11pt, weight: "bold", fill: rgb("#9b2226"))[Not an official SOC 2 audit]

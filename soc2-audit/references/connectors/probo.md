@@ -24,7 +24,7 @@ source:
 | Framework controls (e.g. `CC6.1`) | criteria; each measure inherits the criteria of the framework controls it is linked to |
 | Measures | `controls.csv` rows with IDs `M-001`, `M-002`, ... (`source_ref` keeps the Probo ID) |
 | Measure evidence (files and links) | evidence artifacts, `obtained: direct` for files, `client` for links |
-| Documents linked to framework controls | latest published version as a policy artifact |
+| Documents linked to a framework control or to a measure | latest published version as a policy artifact, with each signature's state and date |
 | People (contract start and end) | `PO-hires` and `PO-terminations` for the period |
 | Third parties | `PO-vendors` |
 | Risks, access review campaigns | JSON exports as evidence |
