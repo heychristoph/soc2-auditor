@@ -301,6 +301,37 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
         items, _error = fetch(tool, key, **arguments)
         return items
 
+    # Task comments are part of the control record. A screenshot without the comment is incomplete.
+    for m in ordered:
+        cid = control_id[m["id"]]
+        tasks = listed(
+            "listMeasureTasks", "tasks",
+            measure_id=m["id"], order_by={"field": "CREATED_AT", "direction": "ASC"},
+        )
+        exported = []
+        for task in tasks:
+            comments, _err = fetch(
+                "listTaskComments", "task_comments",
+                task_id=task["id"], order_by={"field": "CREATED_AT", "direction": "ASC"},
+            )
+            if not comments:
+                continue
+            exported.append({
+                "task": task.get("name"),
+                "state": task.get("state"),
+                "comments": [{"created_at": c.get("created_at"), "content": c.get("content")} for c in comments],
+            })
+        if not exported:
+            continue
+        writer.add_bytes(
+            json.dumps(exported, indent=2),
+            f"task-comments-{slug(m['name'])}.json",
+            title=f"Task comments: {m['name']}",
+            controls=[cid],
+            obtained="direct",
+            source_ref=f"probo:listTaskComments/{m['id']}",
+        )
+
     docs: dict[str, dict] = {}
     doc_controls: dict[str, set[str]] = {}
 
@@ -377,12 +408,13 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
     else:
         writer.add_bytes(json.dumps(campaigns, indent=2), f"{slug('Access review campaigns (Probo)')}.json", title="Access review campaigns (Probo)", source_ref="probo:listAccessReviewCampaigns")
 
+    # listAccessEntries returns "entries". decision_note is the reason on a defer, revoke or escalate.
     entry_fields = (
         "source_name", "email", "full_name", "account_type", "roles", "is_admin",
-        "mfa_status", "auth_method", "decision", "flags", "decided_at", "active",
+        "mfa_status", "auth_method", "decision", "decision_note", "flags", "decided_at", "active", "last_login",
     )
     for camp in campaigns:
-        entries, err = fetch("listAccessEntries", "access_entries", campaign_id=camp["id"])
+        entries, err = fetch("listAccessEntries", "entries", campaign_id=camp["id"])
         if err:
             continue
         slim = [{field: entry.get(field) for field in entry_fields} for entry in entries]

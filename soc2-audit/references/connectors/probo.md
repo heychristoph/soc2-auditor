@@ -24,10 +24,12 @@ source:
 | Framework controls (e.g. `CC6.1`) | criteria; each measure inherits the criteria of the framework controls it is linked to |
 | Measures | `controls.csv` rows with IDs `M-001`, `M-002`, ... (`source_ref` keeps the Probo ID) |
 | Measure evidence (files and links) | evidence artifacts, `obtained: direct` for files, `client` for links. An uploaded file often has an empty MCP `url`; the connector then reads `file.downloadUrl` and the original file name from the console API |
-| Documents linked to a framework control or to a measure | latest published version as a policy artifact, with each signature's state and date |
+| Documents linked to a framework control or to a measure | latest published version as a policy artifact. The header names the approver (`Approval:`) and each signature (`Signatures:`). `not retrieved` means that call failed. It is not "none recorded" |
 | People (contract start and end) | `PO-hires` and `PO-terminations` for the period |
 | Third parties | `PO-vendors` |
 | Risks, access review campaigns | JSON exports as evidence |
+| Access review entries | one JSON file per campaign. Each row has the account, the decision, and `decision_note` (the reason on a defer, revoke or escalate). Use that note. A counts-only summary is not the review |
+| Task comments | one JSON file per measure that has comments, linked to that control. Read them. A comment that an account has no email-and-password login means there is no 2FA setting |
 | Organization context | draft `system.yaml` (status `draft`) |
 
 ## Limits

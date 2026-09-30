@@ -109,8 +109,6 @@ def call_tool(state: dict, name: str, args: dict) -> dict:
     if name == "listDocumentVersionApprovalDecisions":
         signer = state["users"][0]["id"]
         return {"approval_decisions": [{"id": "dec_1", "approver_id": signer, "state": "APPROVED", "decided_at": "2026-09-28T12:00:00Z"}]}
-    if name == "listAccessEntries":
-        return {"access_entries": []}
     if name == "listUsers":
         return {"users": state["users"]}
     if name == "listThirdParties":
@@ -118,7 +116,20 @@ def call_tool(state: dict, name: str, args: dict) -> dict:
     if name == "listRisks":
         return {"risks": []}
     if name == "listAccessReviewCampaigns":
-        return {"campaigns": []}
+        return {"campaigns": [{"id": "camp_1", "name": "Initial Check", "status": "COMPLETED"}]}
+    if name == "listAccessEntries":
+        return {"entries": [{
+            "source_name": "GitHub / example",
+            "email": "a@example.com",
+            "decision": "DEFER",
+            "decision_note": "personal email, needs to change",
+            "flags": [],
+            "active": True,
+        }]}
+    if name == "listMeasureTasks":
+        return {"tasks": [{"id": "task_1", "name": "Check MFA", "state": "DONE"}]}
+    if name == "listTaskComments":
+        return {"task_comments": [{"created_at": "2026-09-30T00:00:00Z", "content": "no email-and-password login"}]}
     if name == "getOrganizationContext":
         c = state["context"]
         return {"organization_context": {"product": c["overview"], "customers": c["services"], "architecture": c["components"]["infrastructure"],
@@ -216,11 +227,15 @@ def main() -> int:
             policy_text = (eng / "bundle" / control_only[0]["path"]).read_text() if control_only else ""
             signer = read_csv(fixture / "export" / "populations" / "hires.csv")[0]["name"]
             signed = "SIGNED 2026-09-28" in policy_text and "APPROVED 2026-09-28" in policy_text and signer in policy_text
+            review = next(eng.joinpath("bundle").rglob("*access-review-entries*.json"), None)
+            review_ok = review is not None and "personal email, needs to change" in review.read_text()
+            comments = list(eng.joinpath("bundle").rglob("*task-comments*.json"))
+            comment_ok = any("no email-and-password login" in p.read_text() for p in comments)
             hidden = list((eng / "bundle" / "evidence").glob("*mfa-screenshot.png"))
             hidden_ok = len(hidden) == 1 and hidden[0].read_bytes() == b"PNG-MFA-SCREENSHOT"
             ok = (len(controls) == 26 and kinds.get("evidence", 0) >= 135 and len(policy_arts) == 13
-                  and kinds.get("population") == 3 and signed and hidden_ok)
-            print(f"controls={len(controls)} artifacts={kinds} signed={signed} file={hidden_ok} -> {'OK' if ok else 'UNEXPECTED'}")
+                  and kinds.get("population") == 3 and signed and hidden_ok and review_ok and comment_ok)
+            print(f"controls={len(controls)} artifacts={kinds} signed={signed} file={hidden_ok} review={review_ok} comments={comment_ok} -> {'OK' if ok else 'UNEXPECTED'}")
     server.shutdown()
     return 0 if ok else 1
 

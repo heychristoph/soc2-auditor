@@ -64,5 +64,8 @@ Copy this checklist and keep it updated:
 ## When things are missing
 
 - Evidence for an item is not in the bundle: the item fails, record an exception, and add a request to `review/requests.csv` for the user. Do not assume it exists.
+- A policy header that says `Approval: not retrieved` or `Signatures: not retrieved` means the connector call failed. Do not rewrite it as "none recorded" and do not conclude that no approver or signature exists. Report the connector error.
+- An access review is the `access-review-entries` JSON, not a counts summary. Read `decision_note` on each defer, revoke and escalate. A decision that has a note has a reason.
+- Read every task-comment file linked to the control. A comment is evidence. When a comment says an account has no email-and-password login, there is no 2FA switch to turn on. Do not record that as missing MFA.
 - The system description is incomplete or not approved: it is management's document. If the user asks, copy `bundle/system.yaml` to `system.yaml` in the engagement root, draft the missing sections from policies and evidence, keep `status: draft`, and tell the user management must review it and set `status: management-approved`. The AI Audit can still be signed; the report will say the description is not management-approved.
 - A connector fails: report the error message to the user. Do not build the bundle by hand.
