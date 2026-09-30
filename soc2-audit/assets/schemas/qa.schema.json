@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review/qa.json",
+  "type": "object",
+  "required": ["schema_version", "reviews"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["control_id", "workpaper_sha256", "verdict", "issues", "evidence_checked", "reviewed_by"],
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {"type": "string"},
+          "workpaper_sha256": {"type": "string", "description": "Hash of the workpaper file as reviewed; a later edit makes the review stale"},
+          "verdict": {"enum": ["agree", "disagree"]},
+          "issues": {"type": "array", "items": {"type": "string"}},
+          "evidence_checked": {"type": "array", "items": {"type": "string"}},
+          "reviewed_by": {"type": "string"}
+        }
+      }
+    }
+  }
+}

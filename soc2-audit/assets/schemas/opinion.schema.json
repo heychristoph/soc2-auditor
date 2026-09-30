@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "opinion.json",
+  "type": "object",
+  "required": ["schema_version", "opinion", "criteria_not_met", "scope_limitations", "basis", "prepared_by"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "opinion": {"enum": ["unmodified", "qualified", "adverse", "disclaimer"]},
+    "criteria_not_met": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["criterion", "reason", "controls"],
+        "additionalProperties": false,
+        "properties": {
+          "criterion": {"type": "string"},
+          "reason": {"type": "string", "minLength": 1},
+          "controls": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "scope_limitations": {"type": "array", "items": {"type": "string"}},
+    "basis": {"type": "string", "description": "Basis for modification paragraph. Empty for an unmodified opinion."},
+    "prepared_by": {"type": "string"}
+  }
+}

@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "workpapers/<control_id>.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "control_id",
+    "control",
+    "criteria",
+    "plan",
+    "design",
+    "procedures",
+    "attributes",
+    "items",
+    "exceptions",
+    "conclusion",
+    "confidence",
+    "prepared_by"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "control_id": {
+      "type": "string"
+    },
+    "control": {
+      "type": "string",
+      "description": "Control description, copied from the bundle"
+    },
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "plan": {
+      "description": "Written by `soc2.py sample`. Do not edit.",
+      "type": "object",
+      "required": [
+        "frequency",
+        "nature",
+        "sample_size",
+        "sample",
+        "seed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "frequency": {
+          "type": "string"
+        },
+        "nature": {
+          "type": "string"
+        },
+        "population": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "source",
+            "size"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "Population artifact ID, or 'periods' for generated occurrences"
+            },
+            "size": {
+              "type": "integer"
+            }
+          }
+        },
+        "sample_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sample": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seed": {
+          "type": "string"
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": [
+        "effective",
+        "rationale",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "effective": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Is the control, as described, suitably designed to meet its criteria? null until assessed"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "procedures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "method",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "method": {
+            "enum": [
+              "inquiry",
+              "observation",
+              "inspection",
+              "reperformance"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "attributes": {
+      "type": "object",
+      "description": "What must be true for each sampled item, keyed by a short letter",
+      "patternProperties": {
+        "^[A-Z]$": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "results",
+          "evidence"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Sample item ID from plan.sample"
+          },
+          "results": {
+            "type": "object",
+            "patternProperties": {
+              "^[A-Z]$": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "n/a"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item",
+          "description",
+          "evidence"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Sample item ID, or 'design' / 'population' for non-item exceptions"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Written as it should appear in Section IV"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "management_response": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "population_check": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "How the completeness and accuracy of the population was tested (required when the plan uses a population file)",
+      "required": [
+        "complete",
+        "rationale",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "enum": [
+        "pending",
+        "no-exceptions",
+        "exceptions",
+        "design-deficiency",
+        "not-tested"
+      ]
+    },
+    "scope_limitation": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Required when conclusion is not-tested"
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Anything the reviewer should know, e.g. suspicious content in evidence"
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        null
+      ]
+    },
+    "prepared_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Agent and model that performed the test"
+    }
+  }
+}

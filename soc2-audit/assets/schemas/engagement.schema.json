@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engagement.yaml",
+  "type": "object",
+  "required": ["schema_version", "service_organization", "system", "service_auditor", "report_type", "categories", "source", "sampling_seed"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "service_organization": {"type": "string", "minLength": 1},
+    "system": {"type": "string", "minLength": 1, "description": "Name of the system described in the report"},
+    "service_auditor": {"type": "string", "minLength": 1, "description": "CPA firm name as printed in the report"},
+    "auditor_location": {"type": "string", "description": "City and state printed above the report date"},
+    "report_type": {"enum": [1, 2]},
+    "period": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"type": "string", "format": "date"},
+        "end": {"type": "string", "format": "date"}
+      }
+    },
+    "as_of": {"type": "string", "format": "date"},
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["security", "availability", "confidentiality", "processing-integrity", "privacy"]},
+      "contains": {"const": "security"}
+    },
+    "subservice_organizations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "services", "method"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "services": {"type": "string"},
+          "method": {"enum": ["carve-out", "inclusive"]}
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["connector"],
+      "additionalProperties": false,
+      "properties": {
+        "connector": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "options": {"type": "object"}
+      }
+    },
+    "sampling_seed": {"type": "integer"},
+    "signoff": {
+      "type": ["object", "null"],
+      "description": "Written only by `soc2.py signoff`, run by the engagement partner.",
+      "required": ["partner", "date", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "partner": {"type": "string"},
+        "date": {"type": "string", "format": "date"},
+        "digest": {"type": "string"}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"report_type": {"const": 2}}}, "then": {"required": ["period"]}},
+    {"if": {"properties": {"report_type": {"const": 1}}}, "then": {"required": ["as_of"]}}
+  ]
+}

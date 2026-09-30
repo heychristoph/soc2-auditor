@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bundle/manifest.json",
+  "type": "object",
+  "required": ["schema_version", "connector", "collected_at", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "connector": {"type": "string"},
+    "source": {"type": "string", "description": "Where the data came from, e.g. an instance URL or export folder"},
+    "collected_at": {"type": "string", "format": "date-time"},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "sha256", "bytes", "kind", "title", "obtained"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^(EV-[0-9]{4,}|PO-[a-z0-9-]+|SY-[a-z0-9-]+)$"},
+          "path": {"type": "string", "description": "Relative to bundle/"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 0},
+          "kind": {"enum": ["evidence", "policy", "population", "controls", "system"]},
+          "title": {"type": "string"},
+          "media_type": {"type": "string"},
+          "controls": {"type": "array", "items": {"type": "string"}, "description": "Control IDs this artifact was provided for"},
+          "date": {"type": "string", "format": "date", "description": "Date the artifact itself refers to, when known"},
+          "source_ref": {"type": "string", "description": "Identifier in the source system"},
+          "obtained": {"enum": ["direct", "client"], "description": "direct: pulled by the auditor from the system of record; client: provided by the service organization"}
+        }
+      }
+    }
+  }
+}

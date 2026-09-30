@@ -1,0 +1,90 @@
+# Trust Services Criteria (2017, revised points of focus 2022): identifiers and
+# short paraphrases for navigation and reporting.
+#
+# The authoritative criteria text is copyrighted by the AICPA. The summaries below
+# are paraphrases, not the official wording. A firm holding a license can set
+# `text:` on any criterion with the official wording; the report prints `text`
+# when present and falls back to `summary`.
+
+categories:
+  security: {name: Security, prefix: CC}
+  availability: {name: Availability, prefix: A}
+  confidentiality: {name: Confidentiality, prefix: C}
+  processing-integrity: {name: Processing Integrity, prefix: PI}
+  privacy: {name: Privacy, prefix: P}
+
+criteria:
+  # CC1 Control environment
+  - {id: CC1.1, category: security, group: Control Environment, summary: "The entity shows a commitment to integrity and ethical values."}
+  - {id: CC1.2, category: security, group: Control Environment, summary: "The board is independent of management and oversees the development and performance of internal control."}
+  - {id: CC1.3, category: security, group: Control Environment, summary: "Management sets up structures, reporting lines, authorities and responsibilities, with board oversight, to pursue objectives."}
+  - {id: CC1.4, category: security, group: Control Environment, summary: "The entity attracts, develops and retains competent people in line with its objectives."}
+  - {id: CC1.5, category: security, group: Control Environment, summary: "The entity holds people accountable for their internal control responsibilities."}
+  # CC2 Communication and information
+  - {id: CC2.1, category: security, group: Communication and Information, summary: "The entity obtains or produces and uses relevant, quality information to support internal control."}
+  - {id: CC2.2, category: security, group: Communication and Information, summary: "The entity communicates internal control objectives and responsibilities internally."}
+  - {id: CC2.3, category: security, group: Communication and Information, summary: "The entity communicates with external parties about matters affecting internal control."}
+  # CC3 Risk assessment
+  - {id: CC3.1, category: security, group: Risk Assessment, summary: "Objectives are specified clearly enough to identify and assess the related risks."}
+  - {id: CC3.2, category: security, group: Risk Assessment, summary: "Risks to objectives are identified across the entity and analyzed to decide how to manage them."}
+  - {id: CC3.3, category: security, group: Risk Assessment, summary: "The potential for fraud is considered when assessing risks."}
+  - {id: CC3.4, category: security, group: Risk Assessment, summary: "Changes that could significantly affect internal control are identified and assessed."}
+  # CC4 Monitoring activities
+  - {id: CC4.1, category: security, group: Monitoring Activities, summary: "Ongoing or separate evaluations confirm that the components of internal control are present and functioning."}
+  - {id: CC4.2, category: security, group: Monitoring Activities, summary: "Internal control deficiencies are evaluated and communicated in time to those responsible for corrective action."}
+  # CC5 Control activities
+  - {id: CC5.1, category: security, group: Control Activities, summary: "Control activities are selected and developed to reduce risks to acceptable levels."}
+  - {id: CC5.2, category: security, group: Control Activities, summary: "General control activities over technology are selected and developed."}
+  - {id: CC5.3, category: security, group: Control Activities, summary: "Control activities are deployed through policies and the procedures that put them into action."}
+  # CC6 Logical and physical access
+  - {id: CC6.1, category: security, group: Logical and Physical Access Controls, summary: "Logical access security software, infrastructure and architecture protect information assets."}
+  - {id: CC6.2, category: security, group: Logical and Physical Access Controls, summary: "New users are registered and authorized before credentials are issued, and credentials are removed when no longer needed."}
+  - {id: CC6.3, category: security, group: Logical and Physical Access Controls, summary: "Access is authorized, changed and removed based on roles, least privilege and segregation of duties."}
+  - {id: CC6.4, category: security, group: Logical and Physical Access Controls, summary: "Physical access to facilities and protected information assets is restricted to authorized people."}
+  - {id: CC6.5, category: security, group: Logical and Physical Access Controls, summary: "Logical and physical protections are discontinued only after data has been removed from disposed assets."}
+  - {id: CC6.6, category: security, group: Logical and Physical Access Controls, summary: "Logical access security measures protect against threats from outside the system boundaries."}
+  - {id: CC6.7, category: security, group: Logical and Physical Access Controls, summary: "Transmission, movement and removal of information is restricted to authorized parties and protected."}
+  - {id: CC6.8, category: security, group: Logical and Physical Access Controls, summary: "Controls prevent or detect and act on unauthorized or malicious software."}
+  # CC7 System operations
+  - {id: CC7.1, category: security, group: System Operations, summary: "Detection and monitoring identify configuration changes and newly discovered vulnerabilities."}
+  - {id: CC7.2, category: security, group: System Operations, summary: "System components are monitored for anomalies that may indicate malicious acts, errors or natural disasters."}
+  - {id: CC7.3, category: security, group: System Operations, summary: "Security events are evaluated to decide whether they are incidents that need a response."}
+  - {id: CC7.4, category: security, group: System Operations, summary: "Identified security incidents are handled through a defined response program."}
+  - {id: CC7.5, category: security, group: System Operations, summary: "Recovery activities after security incidents are identified, developed and carried out."}
+  # CC8 Change management
+  - {id: CC8.1, category: security, group: Change Management, summary: "Changes to infrastructure, data, software and procedures are authorized, designed, documented, tested, approved and implemented."}
+  # CC9 Risk mitigation
+  - {id: CC9.1, category: security, group: Risk Mitigation, summary: "Risk mitigation activities are selected and developed for risks from potential business disruptions."}
+  - {id: CC9.2, category: security, group: Risk Mitigation, summary: "Risks associated with vendors and business partners are assessed and managed."}
+  # A1 Availability
+  - {id: A1.1, category: availability, group: Additional Criteria for Availability, summary: "Processing capacity is maintained, monitored and evaluated, and demand is managed, so commitments can be met."}
+  - {id: A1.2, category: availability, group: Additional Criteria for Availability, summary: "Environmental protections, software, data backup and recovery infrastructure are authorized, built, operated and monitored."}
+  - {id: A1.3, category: availability, group: Additional Criteria for Availability, summary: "Recovery plan procedures that support system recovery are tested."}
+  # C1 Confidentiality
+  - {id: C1.1, category: confidentiality, group: Additional Criteria for Confidentiality, summary: "Confidential information is identified and kept confidential in line with commitments."}
+  - {id: C1.2, category: confidentiality, group: Additional Criteria for Confidentiality, summary: "Confidential information is disposed of in line with commitments."}
+  # PI1 Processing integrity
+  - {id: PI1.1, category: processing-integrity, group: Additional Criteria for Processing Integrity, summary: "Relevant, quality information about processing objectives, including data definitions and product specifications, is obtained and used."}
+  - {id: PI1.2, category: processing-integrity, group: Additional Criteria for Processing Integrity, summary: "Policies and procedures over system inputs result in complete and accurate inputs."}
+  - {id: PI1.3, category: processing-integrity, group: Additional Criteria for Processing Integrity, summary: "Policies and procedures over processing result in products and services that meet specifications."}
+  - {id: PI1.4, category: processing-integrity, group: Additional Criteria for Processing Integrity, summary: "Policies and procedures make outputs available complete, accurate and on time to intended parties only."}
+  - {id: PI1.5, category: processing-integrity, group: Additional Criteria for Processing Integrity, summary: "Inputs, items in processing and outputs are stored completely, accurately and on time."}
+  # P Privacy
+  - {id: P1.1, category: privacy, group: Notice, summary: "Data subjects receive notice about privacy practices."}
+  - {id: P2.1, category: privacy, group: Choice and Consent, summary: "Choices about collection, use, retention, disclosure and disposal are communicated and consent is obtained."}
+  - {id: P3.1, category: privacy, group: Collection, summary: "Personal information is collected only as needed for the entity's objectives."}
+  - {id: P3.2, category: privacy, group: Collection, summary: "Explicit consent is obtained where required before collecting personal information."}
+  - {id: P4.1, category: privacy, group: Use, Retention, and Disposal, summary: "Use of personal information is limited to the stated purposes."}
+  - {id: P4.2, category: privacy, group: Use, Retention, and Disposal, summary: "Personal information is retained only as long as needed."}
+  - {id: P4.3, category: privacy, group: Use, Retention, and Disposal, summary: "Personal information is disposed of securely."}
+  - {id: P5.1, category: privacy, group: Access, summary: "Data subjects can access their stored personal information."}
+  - {id: P5.2, category: privacy, group: Access, summary: "Personal information is corrected, amended or appended when data subjects request it."}
+  - {id: P6.1, category: privacy, group: Disclosure and Notification, summary: "Personal information is disclosed to third parties only for identified purposes and with consent."}
+  - {id: P6.2, category: privacy, group: Disclosure and Notification, summary: "Authorized disclosures of personal information are recorded completely and accurately."}
+  - {id: P6.3, category: privacy, group: Disclosure and Notification, summary: "Unauthorized disclosures, including breaches, are recorded completely and accurately."}
+  - {id: P6.4, category: privacy, group: Disclosure and Notification, summary: "Privacy commitments are obtained from vendors and third parties that handle personal information."}
+  - {id: P6.5, category: privacy, group: Disclosure and Notification, summary: "Vendors and third parties are required to report actual or suspected unauthorized disclosures."}
+  - {id: P6.6, category: privacy, group: Disclosure and Notification, summary: "Affected data subjects, regulators and others are notified of breaches and incidents."}
+  - {id: P6.7, category: privacy, group: Disclosure and Notification, summary: "Data subjects can obtain an accounting of their personal information and its disclosures."}
+  - {id: P7.1, category: privacy, group: Quality, summary: "Personal information is kept accurate, complete and relevant."}
+  - {id: P8.1, category: privacy, group: Monitoring and Enforcement, summary: "Privacy inquiries, complaints and disputes are received, addressed and monitored."}
