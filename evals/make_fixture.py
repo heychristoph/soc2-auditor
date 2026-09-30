@@ -133,6 +133,7 @@ def build(root: Path, report_type: int) -> None:
         **({"period": {"start": START.isoformat(), "end": END.isoformat()}} if report_type == 2 else {"as_of": END.isoformat()}),
         "categories": ["security", "availability", "confidentiality"],
         "subservice_organizations": [{"name": "Amazon Web Services", "services": "Cloud infrastructure hosting", "method": "carve-out"}],
+        "management": {"name": "Jordan Hale", "title": "Chief Executive Officer"},
         "source": {"connector": "folder", "options": {"path": "export"}}, "sampling_seed": SEED, "signoff": None,
     }
     dump_yaml(cfg, root / "engagement.yaml")

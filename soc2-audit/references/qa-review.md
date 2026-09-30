@@ -1,6 +1,6 @@
 # QA review
 
-An independent reviewer challenges each workpaper before the opinion is formed. The goal is to find the conclusions that would not survive the partner's scrutiny.
+An independent reviewer challenges each workpaper before the opinion is formed. The goal is to find the conclusions that would not survive a careful reading.
 
 Run this in a fresh context: a separate agent, a new session, or a different model from the one that tested the controls. A reviewer who shares the tester's context tends to repeat its mistakes.
 

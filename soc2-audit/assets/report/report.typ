@@ -24,7 +24,7 @@
       set text(8.5pt, fill: muted)
       d.org
       h(1fr)
-      [SOC 2 Type #d.report_type Report]
+      [AI Audit — not an official SOC 2 audit]
       v(-0.4em)
       line(length: 100%, stroke: 0.4pt + hairline)
     }
@@ -32,7 +32,7 @@
   footer: context {
     if counter(page).get().first() > 1 {
       set text(8.5pt, fill: muted)
-      if d.final [Confidential and restricted in use] else [Draft for engagement review. Not for distribution.]
+      if d.final [AI Audit. Not an official SOC 2 audit.] else [Draft AI Audit. Not signed. Not an official SOC 2 audit.]
       h(1fr)
       counter(page).display("1 of 1", both: true)
     }
@@ -75,7 +75,9 @@
 
 // Cover
 #page(header: none, footer: none, margin: (x: 1.1in, y: 1.2in), {
-  text(10pt, tracking: 0.14em, fill: muted)[SOC 2® TYPE #d.report_type REPORT]
+  text(10pt, tracking: 0.14em, fill: muted)[AI AUDIT]
+  v(0.35em)
+  text(11pt, weight: "bold", fill: rgb("#9b2226"))[Not an official SOC 2 audit]
   v(0.6em)
   text(28pt, weight: "bold", fill: accent, d.org)
   v(0.2em)
@@ -85,12 +87,16 @@
   v(0.8em)
   text(12pt, fill: muted, if t2 [Throughout the period #d.period] else [As of #d.period])
   v(1fr)
-  text(10pt)[Independent service auditor: *#d.auditor*]
+  text(10pt)[Signed by: *#d.signer_name*, #d.signer_title]
+  v(0.25em)
+  text(10pt)[#d.report_date]
+  v(0.35em)
+  text(9pt, fill: muted, d.disclaimer)
   v(0.6em)
   text(9pt, fill: muted, d.restricted)
   if not d.final {
     v(0.8em)
-    text(9pt, fill: rgb("#9b2226"), weight: "bold")[DRAFT. Generated #d.generated. Not signed off by the engagement partner.]
+    text(9pt, fill: rgb("#9b2226"), weight: "bold")[DRAFT. Generated #d.generated. Not yet signed by the model that ran the audit.]
   }
 })
 

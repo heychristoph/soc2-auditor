@@ -100,7 +100,7 @@ def run(eng: Engagement) -> tuple[list[str], list[str]]:
         if empty:
             warnings.append(f"{eng.system_path.relative_to(eng.root)}: empty fields {empty}; management must complete them")
         if system.get("status") != "management-approved":
-            warnings.append("system.yaml: status is not 'management-approved'; the report stays a draft until management approves the description")
+            warnings.append("system.yaml: status is not 'management-approved'; the AI Audit will say the description is not management-approved")
 
     _write_coverage(eng, by_criterion, evidence_by_control)
     write_csv(eng.review / "requests.csv", requests, ["id", "control", "criterion", "request", "reason"])

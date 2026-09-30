@@ -57,7 +57,8 @@ def _vars(eng: Engagement, text: dict, opinion: dict) -> _Keep:
     has_complementary = bool(subs or eng.system.get("cuecs"))
     start, end = eng.period
     v = _Keep(
-        org=cfg["service_organization"], system=cfg["system"], auditor=cfg["service_auditor"],
+        org=cfg["service_organization"], system=cfg["system"], auditor="AI Audit",
+        model=(cfg.get("signoff") or {}).get("model") or "the model that has not yet signed this AI Audit",
         period=eng.period_label, period_dates=f"{fmt_date(start)} to {fmt_date(end)}" if t2 else fmt_date(end),
         categories=cat_text, categories_title=cat_text.title().replace(" And ", " and "),
         subservice=("the subservice organization " if len(subs) == 1 else "the subservice organizations ") + _join(subs) if subs else "",
@@ -95,10 +96,17 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
     t2 = eng.report_type == 2
     s1 = text["section1"]
     signoff = cfg.get("signoff") or {}
-    report_date = fmt_date(parse_date(signoff["date"])) if final else "[Report date]"
+    model = (signoff.get("model") or "").strip()
+    if not model or not signoff.get("date"):
+        raise AuditError("Run `soc2.py signoff --model \"<model name>\"` before render. The report is signed with that model name, the title AI Auditor, and the date of the signature.")
+    report_date = fmt_date(parse_date(signoff["date"]))
+    mgmt = cfg.get("management") or {}
+    mgmt_name = str(mgmt.get("name") or "").strip()
+    mgmt_title = str(mgmt.get("title") or "").strip()
 
     # Section I
-    b = [{"kind": "para", "text": f(s1["addressee"])}, {"kind": "heading", "text": "Scope"},
+    notice = s1["notice"] if signoff.get("model") else s1["notice_unsigned"]
+    b = [{"kind": "para", "text": f(notice)}, {"kind": "para", "text": f(s1["addressee"])}, {"kind": "heading", "text": "Scope"},
          {"kind": "para", "text": f(s1["scope"]["type2" if t2 else "type1"])}]
     if not t2:
         b.append({"kind": "para", "text": f(s1["type1_no_oe"])})
@@ -130,7 +138,7 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
             chosen[-1] = chosen[-1].rstrip(";") + "."
         b += [{"kind": "para", "text": f(s1["opinion"][kind])}, {"kind": "list", "items": [f(x) for x in chosen], "enum": True}]
     b += [{"kind": "heading", "text": s1["restricted_use"]["heading"]}, {"kind": "para", "text": f(s1["restricted_use"]["text"])},
-          {"kind": "signature", "lines": [cfg["service_auditor"], cfg.get("auditor_location", ""), report_date]}]
+          {"kind": "signature", "lines": [model, "AI Auditor", report_date, "Not an official SOC 2 audit."]}]
     section1 = {"title": f(s1["title"]), "blocks": b}
 
     # Section II
@@ -141,12 +149,14 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
     section2 = {"title": f(s2["title"]), "blocks": [
         {"kind": "para", "text": f(s2["intro"])}, {"kind": "para", "text": f(s2["confirm"])},
         {"kind": "list", "items": [f(x) for x in items], "enum": True},
-        {"kind": "signature", "lines": [f(s2["signature"]), "[Name, Title]"]}]}
+        {"kind": "signature", "lines": [mgmt_name, mgmt_title, report_date]}]}
 
     # Section III (management's description)
     s3 = text["section3"]
     sys_ = eng.system
     blocks = []
+    if sys_.get("status") != "management-approved":
+        blocks.append({"kind": "para", "text": f(s3["unapproved"])})
     for key, heading in s3["headings"].items():
         value = sys_.get(key)
         if not value:
@@ -187,7 +197,12 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
     cover = text["cover"]
     return {
         "final": final,
-        "org": cfg["service_organization"], "system": cfg["system"], "auditor": cfg["service_auditor"],
+        "org": cfg["service_organization"], "system": cfg["system"], "auditor": "AI Audit",
+        "model": model,
+        "signer_name": model,
+        "signer_title": "AI Auditor",
+        "report_date": report_date,
+        "disclaimer": f(cover["disclaimer"]),
         "report_type": eng.report_type, "period": f(v["period_dates"]),
         "title": f(cover["title"]), "restricted": f(cover["restricted"]),
         "generated": dt.date.today().isoformat(),

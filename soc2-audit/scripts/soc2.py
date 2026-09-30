@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""soc2.py: the deterministic half of a SOC 2 examination.
+"""soc2.py: the deterministic half of an AI Audit modeled on a SOC 2 examination.
+
+The report is an AI Audit. It is not an official SOC 2 audit.
 
 Run `soc2.py status <engagement>` at any time; it prints the next step.
 
@@ -11,9 +13,9 @@ Run `soc2.py status <engagement>` at any time; it prints the next step.
   validate  check workpapers (add --final for opinion, QA and description)
   qa        record an independent review of one workpaper
   rollup    summarize conclusions by criterion
-  packet    write the engagement partner's review packet
-  render    build the report PDF, workpaper spreadsheet and evidence index
-  signoff   partner approval (interactive terminal only)
+  packet    write the review packet
+  render    build the AI Audit PDF, workpaper spreadsheet and evidence index
+  signoff   sign the AI Audit with the model that ran it
   status    show progress and the next step
 """
 
@@ -44,8 +46,8 @@ def cmd_init(a) -> int:
         "schema_version": 1,
         "service_organization": a.org,
         "system": a.system,
-        "service_auditor": a.auditor,
-        "auditor_location": a.location or "",
+        "service_auditor": "AI Audit",
+        "auditor_location": "",
         "report_type": a.type,
     }
     if a.type == 2:
@@ -64,7 +66,7 @@ def cmd_init(a) -> int:
     cfg["signoff"] = None
     dump_yaml(cfg, root / "engagement.yaml")
     Engagement(root).config  # validate
-    print(f"Created {root}/engagement.yaml (sampling seed {cfg['sampling_seed']}). Add subservice organizations if any, then run ingest.")
+    print(f"Created {root}/engagement.yaml (sampling seed {cfg['sampling_seed']}). This will be an AI Audit, not an official SOC 2 audit. Add subservice organizations if any, then run ingest.")
     return 0
 
 
@@ -138,7 +140,7 @@ def cmd_rollup(a) -> int:
 def cmd_packet(a) -> int:
     eng = Engagement(a.engagement)
     review.packet(eng)
-    print(f"Wrote {eng.review / 'packet.md'}. Give it to the engagement partner.")
+    print(f"Wrote {eng.review / 'packet.md'}.")
     return 0
 
 
@@ -148,15 +150,17 @@ def cmd_render(a) -> int:
     out = render(Engagement(a.engagement))
     for w in out["warnings"]:
         print(f"warning: {w}")
-    print(f"{'FINAL' if out['final'] else 'DRAFT'} report: {out['pdf']}")
+    print(f"{'Signed AI Audit' if out['final'] else 'DRAFT AI Audit'} report: {out['pdf']}")
+    print("This is an AI Audit, not an official SOC 2 audit.")
     print(f"Workpapers: {out['xlsx']}\nEvidence index: {out['evidence_index']}")
     return 0
 
 
 def cmd_signoff(a) -> int:
     eng = Engagement(a.engagement)
-    digest = review.signoff(eng, a.partner)
-    print(f"Signed off (digest {digest[:16]}). Run render to produce the final report.")
+    digest = review.signoff(eng, a.model)
+    print(f"Signed by {a.model.strip()} (digest {digest[:16]}). Run render to produce the AI Audit PDF.")
+    print("This is an AI Audit, not an official SOC 2 audit.")
     return 0
 
 
@@ -200,11 +204,11 @@ def cmd_status(a) -> int:
     if review.signed_off(eng):
         final_pdfs = [p for p in pdfs if not p.stem.endswith("-DRAFT")]
         if final_pdfs:
-            return _next(f"Complete. Final report: {final_pdfs[-1]}", "none")
-        return _next("Signed off; final report not rendered.", f"soc2.py render {root}")
+            return _next(f"Complete. AI Audit report: {final_pdfs[-1]}", "none")
+        return _next("Signed; AI Audit PDF not rendered.", f"soc2.py render {root}")
     if not pdfs or not (eng.review / "packet.md").exists():
-        return _next("Ready for partner review.", f"soc2.py render {root} and soc2.py packet {root}")
-    return _next("Draft report and review packet ready.", "engagement partner reviews review/packet.md and runs signoff in a terminal")
+        return _next("Ready to sign.", f"soc2.py signoff {root} --model \"<model>\" && soc2.py render {root} && soc2.py packet {root}")
+    return _next("Draft AI Audit ready.", f"soc2.py signoff {root} --model \"<model that ran this audit>\" && soc2.py render {root}")
 
 
 def _next(state: str, step: str) -> int:
@@ -232,8 +236,6 @@ def main(argv=None) -> int:
     s.add_argument("engagement")
     s.add_argument("--org", required=True, help="service organization legal name")
     s.add_argument("--system", required=True, help="name of the system under examination")
-    s.add_argument("--auditor", required=True, help="CPA firm name")
-    s.add_argument("--location", help="city and state for the report signature")
     s.add_argument("--type", type=int, choices=[1, 2], required=True)
     s.add_argument("--start")
     s.add_argument("--end")
@@ -249,7 +251,7 @@ def main(argv=None) -> int:
     s.set_defaults(fn=cmd_ingest)
 
     for name, fn, help_ in [("check", cmd_check, "bundle integrity and coverage"), ("plan", cmd_plan, "create testplan.csv"),
-                            ("rollup", cmd_rollup, "criterion summary"), ("packet", cmd_packet, "partner review packet"),
+                            ("rollup", cmd_rollup, "criterion summary"), ("packet", cmd_packet, "review packet"),
                             ("render", cmd_render, "build the report"), ("status", cmd_status, "progress and next step")]:
         s = sub.add_parser(name, help=help_)
         s.add_argument("engagement")
@@ -274,9 +276,9 @@ def main(argv=None) -> int:
     s.add_argument("--by", required=True, help="reviewing agent and model")
     s.set_defaults(fn=cmd_qa)
 
-    s = sub.add_parser("signoff", help="engagement partner approval")
+    s = sub.add_parser("signoff", help="sign the AI Audit with the model that ran it")
     s.add_argument("engagement")
-    s.add_argument("--partner", required=True)
+    s.add_argument("--model", required=True, help="model name that performed the audit, as printed on the report")
     s.set_defaults(fn=cmd_signoff)
 
     a = p.parse_args(argv)

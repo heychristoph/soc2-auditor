@@ -1,8 +1,7 @@
-# Report wording. Replace with your firm's quality-reviewed templates.
+# Report wording for an AI Audit.
 #
-# The text follows the structure of a SOC 2 examination report under AICPA
-# attestation standards (AT-C 105 and 205) and the SOC 2 description criteria
-# (DC 200). It is written for this tool and is not AICPA illustrative text.
+# The layout follows the structure of a SOC 2 examination report. The document
+# is an AI Audit. It is not an official SOC 2 audit and it is not AICPA text.
 #
 # Placeholders: {org} {system} {auditor} {period} {period_dates}
 # {categories} {subservice} {basis_heading} {and_oe} {and_oe_lc} {and_operated}
@@ -13,11 +12,21 @@ standards:
   trust_services_criteria: "TSP section 100, 2017 Trust Services Criteria for Security, Availability, Processing Integrity, Confidentiality, and Privacy (With Revised Points of Focus, 2022)"
 
 cover:
-  title: "Report on {org}'s Description of Its {system} and on the Suitability of the Design{and_oe} of Its Controls Relevant to {categories_title}"
-  restricted: "This report is intended solely for the specified parties listed in Section I. It is confidential and restricted in use."
+  kicker: "AI Audit"
+  disclaimer: "Not an official SOC 2 audit. Not an examination under AICPA attestation standards. Not a report of a CPA firm."
+  title: "AI Audit of {org}'s {system} and of the Suitability of the Design{and_oe} of Its Controls Relevant to {categories_title}"
+  restricted: "This AI Audit is not an official SOC 2 report and must not be presented as one."
 
 section1:
-  title: "Independent Service Auditor's Report"
+  title: "AI Audit Report"
+  notice: >-
+    This is an AI Audit prepared and signed by {model}. It uses the Trust Services Criteria as the framework for
+    the tests. It is not an official SOC 2 audit, it was not conducted under attestation standards established by
+    the American Institute of Certified Public Accountants, and it is not a report issued by a CPA firm.
+  notice_unsigned: >-
+    This is an AI Audit. It has not been signed yet. It uses the Trust Services Criteria as the framework for
+    the tests. It is not an official SOC 2 audit, it was not conducted under attestation standards established by
+    the American Institute of Certified Public Accountants, and it is not a report issued by a CPA firm.
   addressee: "To the Management of {org}"
   scope:
     type2: >-
@@ -58,16 +67,13 @@ section1:
       description covers; for selecting the applicable trust services criteria and stating the related controls;
       and for identifying the risks that threaten the achievement of its service commitments and system requirements.
   auditor_responsibilities:
-    heading: "Service Auditor's Responsibilities"
+    heading: "AI Audit Responsibilities"
     text: >-
-      Our responsibility is to express an opinion on the description and on the suitability of design{and_oe_lc} of
-      the controls stated in it, based on our examination. We conducted our examination in accordance with
-      attestation standards established by the American Institute of Certified Public Accountants. Those standards
-      require us to plan and perform the examination to obtain reasonable assurance about whether, in all material
-      respects, the description is presented in accordance with the description criteria and the controls stated in
-      it were suitably designed{and_operated} to provide reasonable assurance that the service commitments and system
-      requirements were achieved based on the applicable trust services criteria. We believe the evidence we
-      obtained is sufficient and appropriate to provide a reasonable basis for our opinion.
+      This AI Audit states a conclusion on the description and on the suitability of design{and_oe_lc} of the
+      controls stated in it. The work pulled evidence from the source named in the engagement, tested each control
+      against the applicable trust services criteria, and tied every conclusion to artifacts in the evidence bundle.
+      It was not planned or performed under attestation standards established by the American Institute of Certified
+      Public Accountants, and it does not provide the assurance of an official SOC 2 examination.
     procedures_intro: "Our examination included:"
     procedures:
       - "obtaining an understanding of the system and of the service organization's service commitments and system requirements;"
@@ -78,8 +84,9 @@ section1:
       - "evaluating the overall presentation of the description."
     oe_procedure: "testing the operating effectiveness of those controls to provide reasonable assurance that the service commitments and system requirements were achieved based on the applicable trust services criteria; and"
     independence: >-
-      We are required to be independent of {org} and to meet our other ethical responsibilities, in accordance with
-      the relevant ethical requirements related to the examination engagement.
+      The model that signs this AI Audit is not a certified public accountant and is not independent in the sense
+      required of a service auditor on an official SOC 2 examination. The conclusion is the model's, based only on
+      the evidence in the bundle.
   limitations:
     heading: "Inherent Limitations"
     text: >-
@@ -95,13 +102,13 @@ section1:
     heading: "Basis for {basis_heading} Opinion"
   opinion:
     heading: "Opinion"
-    unmodified: "In our opinion, in all material respects:"
-    qualified: "In our opinion, except for the effects of the matters described in the Basis for Qualified Opinion paragraph, in all material respects:"
-    adverse: "In our opinion, because of the significance of the matters described in the Basis for Adverse Opinion paragraph:"
+    unmodified: "This AI Audit concludes that, in all material respects:"
+    qualified: "This AI Audit concludes that, except for the effects of the matters described in the Basis for Qualified Opinion paragraph, in all material respects:"
+    adverse: "This AI Audit concludes that, because of the significance of the matters described in the Basis for Adverse Opinion paragraph:"
     disclaimer: >-
-      Because of the significance of the matters described in the Basis for Disclaimer of Opinion paragraph, we have
-      not been able to obtain sufficient appropriate evidence to provide a basis for an opinion. Accordingly, we do
-      not express an opinion on the description or on the suitability of design{and_oe_lc} of the controls stated in it.
+      Because of the significance of the matters described in the Basis for Disclaimer of Opinion paragraph, this
+      AI Audit did not obtain sufficient appropriate evidence to support a conclusion. Accordingly, it states no
+      conclusion on the description or on the suitability of design{and_oe_lc} of the controls stated in it.
     items:
       description: "the description presents {org}'s {system} that was designed and implemented {period} in accordance with the description criteria;"
       design: "the controls stated in the description were suitably designed {period} to provide reasonable assurance that {org}'s service commitments and system requirements would be achieved based on the applicable trust services criteria, if its controls operated effectively{complementary};"
@@ -120,7 +127,8 @@ section1:
       entities and business partners, internal control and its limitations, complementary controls and how they
       interact with the service organization's controls, the applicable trust services criteria, and the risks that
       may threaten the achievement of the service commitments and system requirements. This report is not intended
-      to be, and should not be, used by anyone other than these specified parties.
+      to be, and should not be, used by anyone other than these specified parties. It is an AI Audit. It is not an
+      official SOC 2 report and must not be presented as one.
 
 section2:
   title: "{org}'s Management Assertion"
@@ -140,6 +148,8 @@ section2:
 
 section3:
   title: "{org}'s Description of Its {system}"
+  unapproved: >-
+    This system description is not marked management-approved. It is included as drafted for this AI Audit.
   headings:
     overview: "Company Overview"
     services: "Services Provided"
@@ -162,11 +172,11 @@ section4:
   intro:
     type2: >-
       This section lists, for each applicable trust services criterion, the controls {org} has in place, the tests
-      {auditor} performed {period}, and the results. The criteria and the controls that address them are the
-      responsibility of {org}; the tests and results are the responsibility of {auditor}.
+      this AI Audit performed {period}, and the results. The criteria and the controls that address them are the
+      responsibility of {org}; the tests and results are the responsibility of this AI Audit.
     type1: >-
       This section lists, for each applicable trust services criterion, the controls {org} has in place {period}.
-      The criteria and controls are the responsibility of {org}. {auditor} evaluated the suitability of their design
+      The criteria and controls are the responsibility of {org}. This AI Audit evaluated the suitability of their design
       and confirmed that they were implemented; operating effectiveness was not tested.
   methods: >-
     Tests used one or more of these methods. Inquiry: asking appropriate personnel about the control. Observation:
@@ -184,6 +194,6 @@ section5:
   title: "Other Information Provided by {org}"
   intro: >-
     The information in this section is presented by {org} to provide additional information and is not part of the
-    description. It has not been subjected to the procedures applied in the examination, and accordingly {auditor}
-    expresses no opinion on it.
+    description. It has not been subjected to the procedures applied in this AI Audit, and accordingly this AI Audit
+    states no conclusion on it.
   none: "Management did not provide additional information."

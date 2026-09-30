@@ -35,8 +35,8 @@ One folder per client engagement. Every step reads and writes files here, so any
 schema_version: 1
 service_organization: Northwind Analytics, Inc.   # legal name, as printed
 system: Northwind Insights Platform
-service_auditor: Example Assurance LLP            # the CPA firm
-auditor_location: Denver, Colorado
+service_auditor: AI Audit                          # always this; the model name is in signoff
+auditor_location: ""
 report_type: 2                                    # 1 or 2
 period: {start: 2026-01-01, end: 2026-06-30}     # Type 2
 # as_of: 2026-06-30                               # Type 1 instead of period
@@ -46,8 +46,11 @@ subservice_organizations:
 source:
   connector: probo                                # folder | probo | vanta | drata
   options: {organization_id: "..."}               # connector-specific, never secrets
+management:                                       # real person and role, from the evidence
+  name: Ada Lovelace
+  title: Chief Executive Officer
 sampling_seed: 483920117                          # set by init; never change after sampling
-signoff: null                                     # written only by the partner's `signoff`
+signoff: null                                     # written only by `signoff --model`; prints the model name, title AI Auditor, and the date
 ```
 
 Secrets (API tokens) go in environment variables, never in this file.

@@ -1,13 +1,13 @@
 # soc2-auditor
 
-An agent skill that performs SOC 2 Type 1 and Type 2 examinations end to end for a CPA firm: it pulls evidence from the client's compliance platform, tests every control against the Trust Services Criteria, and produces the report PDF, workpapers and a review packet for the engagement partner.
+An agent skill that runs an AI Audit modeled on a SOC 2 Type 1 or Type 2 examination: it pulls evidence from the client's compliance platform, tests every control against the Trust Services Criteria, and produces a PDF signed by the model that ran it. The report says it is an AI Audit, not an official SOC 2 audit.
 
 It follows the open [Agent Skills](https://agentskills.io/specification) format, so the same `soc2-audit/` folder works with Claude Code, Codex, Gemini CLI, Cursor, GitHub Copilot and other agents that read `SKILL.md`. All deterministic work runs in plain Python scripts, so nothing depends on one vendor's agent features.
 
 ## How an engagement runs
 
 ```
-init ──> ingest ──> check ──> plan ──> sample ──> test ──> validate ──> QA ──> opinion ──> render + packet ──> partner signoff
+init ──> ingest ──> check ──> plan ──> sample ──> test ──> validate ──> QA ──> opinion ──> signoff (model) ──> render + packet
           │                                        │                    │
      connector writes                       agent writes one      fresh context or
      bundle/ (hashed)                       workpaper per control  another model reviews
@@ -16,7 +16,7 @@ init ──> ingest ──> check ──> plan ──> sample ──> test ─�
 - **Connectors** (`folder`, `probo`, `vanta`, `drata`) turn a source into an evidence bundle. Every file is hashed at ingest.
 - **The agent** judges: evaluates design, tests each sampled item, writes exceptions, and forms the opinion.
 - **Scripts** count: seeded sampling, validation, criterion rollup, and rendering the report from workpapers.
-- **The partner** reviews `review/packet.md` and signs off in a terminal. Until then every PDF is watermarked DRAFT, and any later change to the work reverts it to draft.
+- **The model** signs `signoff --model` with its own name. Until then every PDF is watermarked DRAFT. The signed PDF is an AI Audit, not an official SOC 2 audit. Any later change to the work clears the signature.
 
 ## Install
 
@@ -31,12 +31,12 @@ Then make `soc2-audit/` visible to your agent: copy or symlink it into the agent
 
 ```bash
 python soc2-audit/scripts/soc2.py init ./acme-2026 --type 2 --start 2026-01-01 --end 2026-06-30 \
-  --org "Acme, Inc." --system "Acme Platform" --auditor "Example Assurance LLP" --location "Denver, Colorado" \
+  --org "Acme, Inc." --system "Acme Platform" \
   --categories security,availability,confidentiality --connector probo --option organization_id=<id>
 export PROBO_TOKEN=...
 ```
 
-Then ask your agent: *"Run the SOC 2 examination in ./acme-2026."* `soc2.py status ./acme-2026` shows progress and the next step at any time.
+Then ask your agent: *"Run the AI Audit in ./acme-2026."* The agent signs the report with the model that ran it. `soc2.py status ./acme-2026` shows progress and the next step at any time.
 
 ## Design guidelines
 
@@ -77,4 +77,4 @@ See [evals/README.md](evals/README.md).
 
 ## Professional responsibility
 
-This tool does the work of an engagement team; it does not replace the CPA firm. The engagement partner remains responsible for the opinion and signs it. The bundled report wording follows the structure of AICPA attestation reports but is not AICPA text: replace it with your firm's quality-reviewed templates. The Trust Services Criteria in `assets/criteria.yaml` are paraphrased; a licensed firm can add the official wording.
+This tool produces an AI Audit. It is not an official SOC 2 audit, not an AICPA attestation, and not a report a CPA firm can issue. The model that ran the work signs the PDF, and the report says so. The Trust Services Criteria in `assets/criteria.yaml` are paraphrased.

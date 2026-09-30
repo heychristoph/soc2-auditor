@@ -29,11 +29,11 @@ sys.path.insert(0, str(HERE))
 
 from graders import grade, print_grade  # noqa: E402
 
-PROMPT = """You are the engagement team for a SOC 2 Type {type} examination.
+PROMPT = """You are running an AI Audit using SOC 2 Type {type} procedures.
 The engagement folder is {engagement}. Read {skill}/SKILL.md first and follow it.
 Use `{python}` to run the skill's scripts; its dependencies are installed.
-Work until `soc2.py status` reports that the draft report and review packet are ready for partner review.
-The engagement partner will review later; do not ask questions, and never run signoff."""
+Sign the report with `soc2.py signoff --model` using the model name that did the work, then render.
+The result is an AI Audit, not an official SOC 2 audit. Do not ask questions."""
 
 
 def main() -> int:
@@ -77,6 +77,7 @@ def _oracle(run: Path, truth_path: Path) -> None:
     for step in ("ingest", "check", "plan", "sample"):
         subprocess.run(soc2 + [step, str(run)], check=True, stdout=subprocess.DEVNULL)
     subprocess.run([sys.executable, str(HERE / "oracle.py"), str(run), str(truth_path)], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(soc2 + ["signoff", str(run), "--model", "oracle"], check=True, stdout=subprocess.DEVNULL)
     for step in ("render", "packet"):
         subprocess.run(soc2 + [step, str(run)], check=True, stdout=subprocess.DEVNULL)
 

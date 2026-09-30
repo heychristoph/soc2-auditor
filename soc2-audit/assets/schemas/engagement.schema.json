@@ -8,7 +8,7 @@
     "schema_version": {"const": 1},
     "service_organization": {"type": "string", "minLength": 1},
     "system": {"type": "string", "minLength": 1, "description": "Name of the system described in the report"},
-    "service_auditor": {"type": "string", "minLength": 1, "description": "CPA firm name as printed in the report"},
+    "service_auditor": {"type": "string", "minLength": 1, "description": "Always \"AI Audit\". The signing model is signoff.model."},
     "auditor_location": {"type": "string", "description": "City and state printed above the report date"},
     "report_type": {"enum": [1, 2]},
     "period": {
@@ -50,14 +50,24 @@
         "options": {"type": "object"}
       }
     },
+    "management": {
+      "type": "object",
+      "description": "The person whose name and title are printed on management's assertion. Real values from the evidence, never a placeholder.",
+      "required": ["name", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1}
+      }
+    },
     "sampling_seed": {"type": "integer"},
     "signoff": {
       "type": ["object", "null"],
-      "description": "Written only by `soc2.py signoff`, run by the engagement partner.",
-      "required": ["partner", "date", "digest"],
+      "description": "Written only by `soc2.py signoff --model`. The model that ran the AI Audit.",
+      "required": ["model", "date", "digest"],
       "additionalProperties": false,
       "properties": {
-        "partner": {"type": "string"},
+        "model": {"type": "string", "minLength": 1},
         "date": {"type": "string", "format": "date"},
         "digest": {"type": "string"}
       }

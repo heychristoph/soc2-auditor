@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import datetime as dt
 import random
-import sys
 from collections import defaultdict
 
 from core import AuditError, Engagement, dump_json, dump_yaml, load_json, load_yaml, parse_date, read_csv, schema_errors, sha256_file
@@ -41,8 +40,26 @@ def validate(eng: Engagement, final: bool = False) -> tuple[list[str], list[str]
         if not system:
             errors.append("no system description; management must provide system.yaml (see references/reporting.md)")
         elif system.get("status") != "management-approved":
-            warnings.append("system.yaml is not management-approved; the report will render as a draft")
+            warnings.append("system.yaml is not management-approved; the AI Audit will say so")
+        errors += _check_management(eng)
     return errors, warnings
+
+
+def _check_management(eng: Engagement) -> list[str]:
+    """The assertion is signed with a real person and role, not a blank or a placeholder."""
+    mgmt = eng.config.get("management") or {}
+    name = str(mgmt.get("name") or "").strip()
+    title = str(mgmt.get("title") or "").strip()
+    if _placeholder(name) or _placeholder(title):
+        return ["engagement.yaml needs management.name and management.title: the real person responsible for the system and their role, taken from the evidence. Do not use a placeholder."]
+    return []
+
+
+def _placeholder(value: str) -> bool:
+    if not value:
+        return True
+    low = value.lower()
+    return any(mark in low for mark in ("[", "]", "placeholder", "name, title", "todo", "tbd", "n/a"))
 
 
 def _check_workpaper(eng: Engagement, cid: str, wp: dict, plan_row: dict | None) -> tuple[list[str], list[str]]:
@@ -228,11 +245,11 @@ def rollup(eng: Engagement) -> str:
 
 # --- review packet -------------------------------------------------------------
 
-SPOT_CHECKS = 5  # Passing controls the partner re-performs; enough to catch systematic errors cheaply.
+SPOT_CHECKS = 5  # Passing controls to re-read; enough to catch systematic errors cheaply.
 
 
 def packet(eng: Engagement) -> str:
-    """What the engagement partner must look at before signing. Written to review/packet.md."""
+    """The record of what the AI Audit concluded. Written to review/packet.md."""
     workpapers = eng.load_workpapers()
     op = load_json(eng.opinion_path) if eng.opinion_path.exists() else None
     errors, warnings = validate(eng, final=True)
@@ -240,7 +257,8 @@ def packet(eng: Engagement) -> str:
     def ev_links(ids):
         return ", ".join(f"[{i}](../bundle/{eng.artifacts[i]['path']})" for i in ids if i in eng.artifacts) or "none"
 
-    out = [f"# Review packet: {eng.config['service_organization']}, SOC 2 Type {eng.report_type}", "",
+    out = [f"# Review packet: {eng.config['service_organization']}, AI Audit (SOC 2 Type {eng.report_type} procedures)", "",
+           "This packet supports an AI Audit. It is not an official SOC 2 audit.", "",
            f"Period: {eng.period_label}. Digest: `{eng.digest()[:16]}`.", ""]
     if errors:
         out += ["## Blocking issues", "", *[f"- {e}" for e in errors], ""]
@@ -284,8 +302,10 @@ def packet(eng: Engagement) -> str:
     if warnings:
         out += ["", "## Warnings", "", *[f"- {w}" for w in warnings]]
     out += ["", "## Sign-off", "",
-            "When satisfied, the engagement partner runs `soc2.py signoff <engagement> --partner \"Name, CPA\"` in a terminal, "
-            "then `soc2.py render` to produce the final report. Any later change to the work reverts the report to draft.", ""]
+            "Set management.name and management.title to the real person and role, then sign with "
+            "`soc2.py signoff <engagement> --model \"<model name>\"` and `soc2.py render`. "
+            "The PDF shows that model name, the title AI Auditor, management's name and title, and the signature date. "
+            "It is an AI Audit, not an official SOC 2 audit. Any later change to the work clears the signature.", ""]
     text = "\n".join(out)
     eng.review.mkdir(parents=True, exist_ok=True)
     (eng.review / "packet.md").write_text(text, encoding="utf-8")
@@ -295,24 +315,27 @@ def packet(eng: Engagement) -> str:
 # --- sign-off ------------------------------------------------------------------
 
 
-def signoff(eng: Engagement, partner: str) -> str:
-    """Record the partner's approval, bound to the digest of the reviewed work."""
-    if not sys.stdin.isatty():
-        raise AuditError("Sign-off must be run by the engagement partner in an interactive terminal.")
+def signoff(eng: Engagement, model: str) -> str:
+    """Record the model that ran the AI Audit, bound to the digest of the work."""
+    model = (model or "").strip()
+    if not model:
+        raise AuditError("Sign-off needs --model, the name of the model that ran the AI Audit.")
     errors, _ = validate(eng, final=True)
     if errors:
         raise AuditError("Cannot sign off while validation fails:\n  " + "\n  ".join(errors[:20]))
     digest = eng.digest()
-    print(f"Signing off {eng.config['service_organization']} (Type {eng.report_type}), digest {digest[:16]}.")
-    typed = input(f"Type your name exactly as '{partner}' to confirm you reviewed review/packet.md: ").strip()
-    if typed != partner:
-        raise AuditError("Name did not match; sign-off not recorded.")
     config = load_yaml(eng.config_path)
-    config["signoff"] = {"partner": partner, "date": dt.date.today().isoformat(), "digest": digest}
+    config["service_auditor"] = "AI Audit"
+    config["signoff"] = {"model": model, "date": dt.date.today().isoformat(), "digest": digest}
+    dump_yaml(config, eng.config_path)
+    # service_auditor is part of the digest. Recompute after writing it, then store that digest.
+    digest = eng.digest()
+    config = load_yaml(eng.config_path)
+    config["signoff"]["digest"] = digest
     dump_yaml(config, eng.config_path)
     return digest
 
 
 def signed_off(eng: Engagement) -> bool:
-    s = load_yaml(eng.config_path).get("signoff")
-    return bool(s) and s.get("digest") == eng.digest() and eng.system.get("status") == "management-approved"
+    s = load_yaml(eng.config_path).get("signoff") or {}
+    return bool(s.get("model")) and s.get("digest") == eng.digest()

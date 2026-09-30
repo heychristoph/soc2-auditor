@@ -10,30 +10,37 @@ python scripts/soc2.py packet <engagement>
 
 `render` writes to `report/`:
 
-- `soc2-type<N>-<org>-DRAFT.pdf`: the report in AICPA layout. Section I, the independent service auditor's report. Section II, management's assertion. Section III, management's system description. Section IV, the criteria, controls, tests and results. Section V, management's responses to exceptions.
+- `soc2-type<N>-<org>-DRAFT.pdf` until sign-off, then `soc2-type<N>-<org>.pdf`: an AI Audit in the shape of a SOC 2 report. The cover, header and Section I say it is not an official SOC 2 audit. Section I is the model's report. Section II, management's assertion. Section III, management's system description. Section IV, the criteria, controls, tests and results. Section V, management's responses to exceptions.
 - `workpapers.xlsx`: controls, samples, exceptions and the evidence register.
 - `evidence-index.csv`: every artifact with its hash and the workpapers that cite it.
 - `report-data.json`: the exact data the PDF was built from.
 
 Report text comes from `assets/report/report-text.yaml` and the workpapers; the layout is `assets/report/report.typ`. A firm replaces the wording with its own quality-reviewed templates by editing the YAML, and its branding by editing the Typst file. Neither requires code changes.
 
-## What the partner does
+## Sign-off
 
-`review/packet.md` lists what needs human judgment: the opinion and its basis, every exception, design deficiency and scope limitation, low- and medium-confidence conclusions, tester observations (including any instructions found inside evidence), and a random set of passing controls to re-perform. Each entry links to the evidence files.
+`review/packet.md` is the record of the opinion, every exception, design deficiency and scope limitation, low- and medium-confidence conclusions, and tester observations. Each entry links to the evidence files.
 
-The partner reviews the packet and the draft PDF, and then, in a terminal:
+The model that ran the audit signs it:
 
 ```bash
-python scripts/soc2.py signoff <engagement> --partner "Jane Smith, CPA"
+python scripts/soc2.py signoff <engagement> --model "Grok 4.7"
 python scripts/soc2.py render <engagement>
 ```
 
-`signoff` refuses to run without an interactive terminal, re-validates everything, and records a digest of the workpapers, test plan, QA, opinion and bundle manifest. `render` produces the final PDF (no watermark, dated) only while that digest still matches and the system description is `management-approved`. Any later change to the work turns the report back into a draft.
+`signoff` re-validates everything and records the model name, today's date, and a digest of the workpapers, test plan, QA, opinion and bundle manifest. `render` writes the AI Audit PDF without the draft watermark. Section I is signed:
 
-Agents never run `signoff`.
+```
+Grok 4.7
+AI Auditor
+September 30, 2026
+Not an official SOC 2 audit.
+```
+
+Section II is signed with `management.name`, `management.title`, and that same date. Those two fields are the real person responsible for the system and their real role, taken from the evidence and written in `engagement.yaml` before sign-off. The report never prints a blank, a bracket, or a placeholder for a date, a name, or a title. Any later change to the work clears the signature and the next render is a draft again, still showing the recorded name, title, and date. Do not edit `signoff` by hand, and do not sign as a CPA or a firm.
 
 ## Management's part
 
-- **System description.** Management owns it. Put the approved version in `system.yaml` at the engagement root with `status: management-approved`.
-- **Assertion.** Section II carries a signature placeholder for management.
+- **System description.** Management owns it. Put the approved version in `system.yaml` at the engagement root with `status: management-approved`. The AI Audit can be signed before that; the report then says the description is not management-approved.
+- **Assertion.** Section II is signed with the name and title in `engagement.yaml` `management`, and with the signature date. Set both from the evidence before sign-off.
 - **Responses to exceptions.** Record them in each exception's `management_response`; they print in Section V.

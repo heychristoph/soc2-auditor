@@ -22,7 +22,7 @@ An exception in one control does not by itself mean a criterion was not met. For
 | `adverse` | Failures are so pervasive that the controls as a whole did not meet the criteria. |
 | `disclaimer` | Scope limitations are so significant that no opinion can be formed. |
 
-When unsure between two opinions, choose the more conservative one and explain the judgment in the basis paragraph; the partner decides.
+When unsure between two opinions, choose the more conservative one and explain the judgment in the basis paragraph. The basis is printed in the AI Audit.
 
 ## opinion.json
 
