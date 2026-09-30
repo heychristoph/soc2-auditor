@@ -66,6 +66,14 @@ def build_state(export: Path) -> dict:
                       + [{"id": f"usr_{t['id']}", "full_name": t["name"], "email_address": "", "state": "DEACTIVATED", "contract": {"start": "2023-01-09", "end": t["date"]}} for t in pops["terminations"]])
     state["vendors"] = [{"id": f"tp_{v['id']}", "name": v["name"], "category": v["category"], "created_at": v["date"] + "T00:00:00Z"} for v in pops["vendors"]]
     state["context"] = load_yaml(export / "system.yaml")
+    # Probo's MCP list leaves url empty for uploaded files. The file is only on the console GraphQL API.
+    first = next(iter(state["evidences"]))
+    state["files"]["/files/hidden/mfa-screenshot.png"] = b"PNG-MFA-SCREENSHOT"
+    state["evidences"][first].append({
+        "id": "evd_hidden", "organization_id": "org_1", "measure_id": f"msr_{first}", "state": "FULFILLED",
+        "reference_id": "mfa-screenshot.png", "type": "FILE", "url": "", "description": "MFA screenshot",
+        "created_at": ts, "updated_at": ts,
+    })
     return state
 
 
@@ -135,6 +143,16 @@ def serve(state: dict) -> ThreadingHTTPServer:
             if not self._auth():
                 return
             req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            if self.path.startswith("/api/console/v1/graphql"):
+                found = req.get("variables", {}).get("id") == "evd_hidden"
+                payload = {"data": {"node": {"file": {"fileName": "mfa-screenshot.png", "downloadUrl": "/files/hidden/mfa-screenshot.png"}}}} if found else {"errors": [{"message": "not found"}]}
+                body = json.dumps(payload).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if "id" not in req:
                 self.send_response(202)
                 self.end_headers()
@@ -191,9 +209,11 @@ def main() -> int:
             policy_text = (eng / "bundle" / control_only[0]["path"]).read_text() if control_only else ""
             signer = read_csv(fixture / "export" / "populations" / "hires.csv")[0]["name"]
             signed = "SIGNED 2026-09-28" in policy_text and signer in policy_text
+            hidden = list((eng / "bundle" / "evidence").glob("*mfa-screenshot.png"))
+            hidden_ok = len(hidden) == 1 and hidden[0].read_bytes() == b"PNG-MFA-SCREENSHOT"
             ok = (len(controls) == 26 and kinds.get("evidence", 0) >= 135 and len(policy_arts) == 13
-                  and kinds.get("population") == 3 and signed)
-            print(f"controls={len(controls)} artifacts={kinds} signed={signed} -> {'OK' if ok else 'UNEXPECTED'}")
+                  and kinds.get("population") == 3 and signed and hidden_ok)
+            print(f"controls={len(controls)} artifacts={kinds} signed={signed} file={hidden_ok} -> {'OK' if ok else 'UNEXPECTED'}")
     server.shutdown()
     return 0 if ok else 1
 

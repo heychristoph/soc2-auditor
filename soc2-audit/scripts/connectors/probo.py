@@ -108,6 +108,32 @@ class ProboMCP:
         return reply.get("result", {})
 
 
+def evidence_file(base: str, token: str, evidence_id: str) -> dict | None:
+    """The download link for an uploaded file. MCP listMeasureEvidences leaves url empty; the console API returns it on file.downloadUrl, with the original file name."""
+    query = "query($id: ID!) { node(id: $id) { ... on Evidence { file { fileName downloadUrl } } } }"
+    req = urllib.request.Request(
+        base.rstrip("/") + "/api/console/v1/graphql",
+        data=json.dumps({"query": query, "variables": {"id": evidence_id}}).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            payload = json.loads(resp.read().decode())
+    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError):
+        return None
+    if payload.get("errors"):
+        return None
+    file = ((payload.get("data") or {}).get("node") or {}).get("file") or {}
+    if not file.get("downloadUrl"):
+        return None
+    return file
+
+
 def signature_line(signatures: list, signers: dict) -> str:
     """One line an auditor can check without opening Probo. Names come from the people export when the signatory id matches."""
     if not signatures:
@@ -221,10 +247,23 @@ def pull(writer: BundleWriter, options: dict, engagement) -> None:
             if ev.get("type") == "LINK":
                 writer.add_bytes(f"[InternetShortcut]\nURL={ev['url']}\n", f"{slug(title)}.url", title=title, controls=[cid], date=date, obtained="client", source_ref=ref)
                 continue
-            url = urllib.parse.urljoin(base + "/", ev["url"])
-            name = os.path.basename(urllib.parse.urlparse(url).path) or f"{slug(title)}.bin"
-            headers = {"Authorization": f"Bearer {token}"} if url.startswith(base) else None
-            writer.add_download(url, name, title=title, headers=headers, controls=[cid], date=date, obtained="direct", source_ref=ref)
+            # An empty url joined onto the instance root is the console page, not the file.
+            file_url = (ev.get("url") or "").strip()
+            filename = ""
+            if not file_url:
+                info = evidence_file(base, token, ev["id"])
+                if info:
+                    file_url = info["downloadUrl"]
+                    filename = info.get("fileName") or ""
+            if not file_url:
+                writer.warn(f"{cid}: file evidence '{title}' has no download URL")
+                continue
+            if not urllib.parse.urlparse(file_url).scheme:
+                file_url = urllib.parse.urljoin(base + "/", file_url)
+            if not filename:
+                filename = os.path.basename(urllib.parse.urlparse(file_url).path) or f"{slug(title)}.bin"
+            headers = {"Authorization": f"Bearer {token}"} if file_url.startswith(base) else None
+            writer.add_download(file_url, filename, title=title, headers=headers, controls=[cid], date=date, obtained="direct", source_ref=ref)
 
     # 5. Policies. Probo links a document either to a framework control or to a
     # measure (the usual place for a signed policy). Both have to be read; a
