@@ -27,7 +27,11 @@
     },
     "control": {
       "type": "string",
-      "description": "Control description, copied from the bundle"
+      "description": "Control description, copied from the bundle. Not printed."
+    },
+    "statement": {
+      "type": "string",
+      "description": "Wording printed in the report when the control title is not enough. Names no one but management.name, and contains no email address or phone number."
     },
     "criteria": {
       "type": "array",

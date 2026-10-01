@@ -15,7 +15,7 @@ One folder per client engagement. Every step reads and writes files here, so any
 ```
 <engagement>/
 ├── engagement.yaml        scope and settings (you or the user)
-├── system.yaml            optional: management's description, overrides bundle/system.yaml
+├── system.yaml            description printed in the report; not a copy of the connector draft
 ├── bundle/                evidence, written once by `ingest`, then read-only
 │   ├── manifest.json      every artifact: id, path, sha256, kind, controls, date, obtained
 │   ├── controls.csv       the service organization's control matrix
@@ -93,7 +93,7 @@ changes: ...             # significant changes in the period
 
 ## workpapers/<control>.json
 
-Created by `sample` with the `plan` block filled in and `conclusion: pending`. The tester fills in everything else. See [control-testing.md](control-testing.md) for each field and `assets/schemas/workpaper.schema.json` for the exact shape.
+Created by `sample` with the `plan` block filled in and `conclusion: pending`. The tester fills in everything else, including an optional `statement` when the control title is not the sentence the report should print. See [control-testing.md](control-testing.md) for each field and `assets/schemas/workpaper.schema.json` for the exact shape.
 
 ## opinion.json, review/, report/
 

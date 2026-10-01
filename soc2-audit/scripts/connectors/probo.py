@@ -63,16 +63,23 @@ class ProboMCP:
         return {}
 
     def pages(self, tool: str, key: str, **arguments):
-        """Yield every item across cursor-paginated results."""
+        """Yield every item across cursor-paginated results.
+
+        A short page is the last page. Probo still returns next_cursor for
+        signature and approval lists in that case, and the following request
+        fails with an internal server error (the cursor predicate uses an
+        unqualified id, which is ambiguous on those joined queries).
+        """
         cursor = None
         while True:
             args = dict(arguments, size=PAGE_SIZE)
             if cursor:
                 args["cursor"] = cursor
             out = self.call(tool, **args)
-            yield from out.get(key) or []
+            items = out.get(key) or []
+            yield from items
             cursor = out.get("next_cursor")
-            if not cursor:
+            if not cursor or len(items) < PAGE_SIZE:
                 return
 
     def _rpc(self, method: str, params, notify: bool = False):

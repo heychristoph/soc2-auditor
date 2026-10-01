@@ -299,7 +299,7 @@ def _plant_type2(export: Path, samples: dict, pops) -> list[dict]:
     late = dt.date.fromisoformat(term["date"]) + dt.timedelta(days=9)
     edit_json(ev / "C-12" / f"{t}_offboarding-ticket.json", access_removed_at=late.isoformat() + "T09:05:00Z")
     defects.append({"id": "D-late-removal", "control": "C-12", "item": t, "kind": "exception", "note": "Access removed 9 days after termination"})
-    defects.append({"id": "D-population", "control": "C-12", "item": "population", "kind": "population", "note": f"HR roster shows {pops['missing_term']['name']} terminated 2026-05-20 but the termination population omits them"})
+    defects.append({"id": "D-population", "control": "C-12", "item": "population", "kind": "population", "note": "HR roster shows one employee terminated 2026-05-20 who is omitted from the termination population"})
     defects.append({"id": "D-missing-review", "control": "C-13", "item": "2026-Q2", "kind": "exception", "note": "No Q2 access review evidence"})
 
     h = samples["C-05"][0]

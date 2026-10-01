@@ -149,7 +149,10 @@ section2:
 section3:
   title: "{org}'s Description of Its {system}"
   unapproved: >-
-    This system description is not marked management-approved. It is included as drafted for this AI Audit.
+    This system description is not marked management-approved.
+  omitted: >-
+    A system description for readers of this report has not been provided. Text pulled from the compliance
+    system is evidence and is not printed here.
   headings:
     overview: "Company Overview"
     services: "Services Provided"

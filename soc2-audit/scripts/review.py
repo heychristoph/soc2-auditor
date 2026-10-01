@@ -13,6 +13,7 @@ from collections import defaultdict
 
 from core import AuditError, Engagement, dump_json, dump_yaml, load_json, load_yaml, parse_date, read_csv, schema_errors, sha256_file
 from planning import expected_plan
+import privacy
 
 DONE = ("no-exceptions", "exceptions", "design-deficiency", "not-tested")
 
@@ -42,6 +43,9 @@ def validate(eng: Engagement, final: bool = False) -> tuple[list[str], list[str]
         elif system.get("status") != "management-approved":
             warnings.append("system.yaml is not management-approved; the AI Audit will say so")
         errors += _check_management(eng)
+        leaked, notes = privacy.check(eng)
+        errors += leaked
+        warnings += notes
     return errors, warnings
 
 
@@ -258,7 +262,7 @@ def packet(eng: Engagement) -> str:
         return ", ".join(f"[{i}](../bundle/{eng.artifacts[i]['path']})" for i in ids if i in eng.artifacts) or "none"
 
     out = [f"# Review packet: {eng.config['service_organization']}, AI Audit (SOC 2 Type {eng.report_type} procedures)", "",
-           "This packet supports an AI Audit. It is not an official SOC 2 audit.", "",
+           "This packet supports an AI Audit. It is not an official SOC 2 audit. It is the internal record: it quotes observations and the source control text, and it is not the customer report.", "",
            f"Period: {eng.period_label}. Digest: `{eng.digest()[:16]}`.", ""]
     if errors:
         out += ["## Blocking issues", "", *[f"- {e}" for e in errors], ""]
@@ -280,7 +284,7 @@ def packet(eng: Engagement) -> str:
     for title, wps in sections:
         out += [f"## {title} ({len(wps)})", ""]
         for w in wps:
-            out.append(f"### {w['control_id']}: {w['control'][:120]}")
+            out.append(f"### {w['control_id']}: {privacy.activity(eng, w)}")
             out.append(f"Conclusion: {w['conclusion']}, confidence: {w.get('confidence')}. Criteria: {', '.join(w['criteria'])}.")
             for x in w["exceptions"]:
                 out.append(f"- Exception ({x['item']}): {x['description']} Evidence: {ev_links(x['evidence'])}")
@@ -298,7 +302,7 @@ def packet(eng: Engagement) -> str:
     for cid in picks:
         w = workpapers[cid]
         item = w["items"][0] if w["items"] else None
-        out.append(f"- **{cid}**: {w['control'][:100]}. " + (f"Item {item['id']}: evidence {ev_links(item['evidence'])}" if item else "No items."))
+        out.append(f"- **{cid}**: {privacy.activity(eng, w)}. " + (f"Item {item['id']}: evidence {ev_links(item['evidence'])}" if item else "No items."))
     if warnings:
         out += ["", "## Warnings", "", *[f"- {w}" for w in warnings]]
     out += ["", "## Sign-off", "",

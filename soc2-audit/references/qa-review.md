@@ -10,7 +10,7 @@ Run this in a fresh context: a separate agent, a new session, or a different mod
 2. **Check the attributes.** Do they test everything the control description promises? A control that says "approved by the manager before access is granted" needs both the approval and its timing tested.
 3. **Look for missed exceptions.** Compare dates and thresholds against the policy. Look for evidence dated outside the period, approvals by the same person who made the change, and items marked `pass` with thin or unrelated evidence.
 4. **Check the population test** (Type 2): was the population compared to an independent source, and does the comparison hold up?
-5. **Check the wording.** Exception descriptions must be factual and specific enough to print in the report.
+5. **Check the wording.** Exception descriptions must be factual and specific enough to print. Disagree when `statement`, an exception description, `scope_limitation`, or `design.rationale` names anyone other than `management.name`, or contains an email address or a phone number. Those belong in `observations`.
 6. **Record the verdict:**
 
 ```bash

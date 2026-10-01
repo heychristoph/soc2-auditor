@@ -17,6 +17,17 @@ python scripts/soc2.py packet <engagement>
 
 Report text comes from `assets/report/report-text.yaml` and the workpapers; the layout is `assets/report/report.typ`. A firm replaces the wording with its own quality-reviewed templates by editing the YAML, and its branding by editing the Typst file. Neither requires code changes.
 
+## What the PDF may identify
+
+The PDF names the service organization, the system, subservice organizations, vendors, `management.name` and title, and the model that signed. It names no one else. It contains no email address and no phone number. `validate --final` enforces this on every string the PDF can contain, and `signoff` and `render` both run that check.
+
+- Section IV prints the workpaper `statement` when it is set, otherwise the control title from `controls.csv`. The source description stored in `control` is not printed.
+- Section III prints `system.yaml` at the engagement root. It prints `bundle/system.yaml` only when that file is `management-approved`. A connector draft is omitted, and the section says the description was not provided.
+- The same check covers procedures, exception descriptions, design rationales, scope limitations, sample notes, management responses, and the opinion basis. A name, inbox or phone number belongs in `observations`.
+- `report/evidence-index.csv` and the Evidence sheet of `workpapers.xlsx` replace a title or path that contains an email address, a phone number, or another person's name with `[redacted]`. Files in `bundle/` are unchanged.
+
+`review/packet.md` is the internal record. It quotes observations in full. Send the customer the PDF, not the packet and not the bundle.
+
 ## Sign-off
 
 `review/packet.md` is the record of the opinion, every exception, design deficiency and scope limitation, low- and medium-confidence conclusions, and tester observations. Each entry links to the evidence files.
@@ -41,6 +52,6 @@ Section II is signed with `management.name`, `management.title`, and that same d
 
 ## Management's part
 
-- **System description.** Management owns it. Put the approved version in `system.yaml` at the engagement root with `status: management-approved`. The AI Audit can be signed before that; the report then says the description is not management-approved.
+- **System description.** Management owns it. The file readers see is `system.yaml` at the engagement root, written for the report and not copied from the connector draft. Put the approved version there with `status: management-approved`. The AI Audit can be signed before that; the report then says the description is not management-approved. With no root file, and with only a draft in the bundle, Section III says the description was not provided.
 - **Assertion.** Section II is signed with the name and title in `engagement.yaml` `management`, and with the signature date. Set both from the evidence before sign-off.
 - **Responses to exceptions.** Record them in each exception's `management_response`; they print in Section V.

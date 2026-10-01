@@ -16,6 +16,7 @@ from pathlib import Path
 
 from core import ASSETS, AuditError, Engagement, dump_json, fmt_date, load_json, load_yaml, parse_date
 from review import signed_off, validate
+import privacy
 
 CATEGORY_NAMES = {"security": "security", "availability": "availability", "confidentiality": "confidentiality",
                   "processing-integrity": "processing integrity", "privacy": "privacy"}
@@ -151,13 +152,17 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
         {"kind": "list", "items": [f(x) for x in items], "enum": True},
         {"kind": "signature", "lines": [mgmt_name, mgmt_title, report_date]}]}
 
-    # Section III (management's description)
+    # Section III. A compliance-system draft is evidence, not the description readers see.
     s3 = text["section3"]
-    sys_ = eng.system
+    sys_ = privacy.report_system(eng)
     blocks = []
-    if sys_.get("status") != "management-approved":
+    if not sys_:
+        blocks.append({"kind": "para", "text": f(s3["omitted"])})
+    elif sys_.get("status") != "management-approved":
         blocks.append({"kind": "para", "text": f(s3["unapproved"])})
     for key, heading in s3["headings"].items():
+        if not sys_:
+            break
         value = sys_.get(key)
         if not value:
             continue
@@ -183,7 +188,7 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
         code = crit["id"].split(".")[0]
         if not groups or groups[-1]["code"] != code:
             groups.append({"code": code, "title": f"{code}: {crit['group']}", "criteria": []})
-        rows = [_row(wp, s4, v, t2) for wp in by_crit.get(crit["id"], [])]
+        rows = [_row(eng, wp, s4, v, t2) for wp in by_crit.get(crit["id"], [])]
         groups[-1]["criteria"].append({"id": crit["id"], "text": crit.get("text") or crit["summary"], "rows": rows})
     section4 = {"title": f(s4["title"]), "intro": [f(s4["intro"]["type2" if t2 else "type1"])] + ([f(s4["methods"])] if t2 else []),
                 "columns": s4["columns"] if t2 else s4["columns_type1"], "groups": groups}
@@ -234,8 +239,8 @@ def _prose(value) -> list[dict]:
     return [{"kind": "para", "text": str(value)}]
 
 
-def _row(wp: dict, s4: dict, v: _Keep, t2: bool) -> dict:
-    row = {"control": wp["control_id"], "activity": wp["control"]}
+def _row(eng: Engagement, wp: dict, s4: dict, v: _Keep, t2: bool) -> dict:
+    row = {"control": wp["control_id"], "activity": privacy.activity(eng, wp)}
     if not t2:
         return row
     tests = [p["text"] for p in wp["procedures"]]
@@ -291,7 +296,7 @@ def _write_xlsx(eng: Engagement, path: Path) -> None:
         ws.append([cid, " ".join(wp["criteria"]), p["frequency"], p["nature"],
                    f"{p['population']['source']} ({p['population']['size']})" if p["population"] else "",
                    p["sample_size"], wp["design"]["effective"], wp["conclusion"], len(wp["exceptions"]),
-                   wp.get("confidence"), wp.get("prepared_by"), wp["control"]])
+                   wp.get("confidence"), wp.get("prepared_by"), privacy.activity(eng, wp)])
         for item in wp["items"]:
             samples.append([cid, item["id"], ", ".join(f"{k}={r}" for k, r in sorted(item["results"].items())),
                             " ".join(item["evidence"]), item.get("note", "")])
@@ -300,7 +305,7 @@ def _write_xlsx(eng: Engagement, path: Path) -> None:
     ev = wb.create_sheet("Evidence")
     ev.append(["ID", "Title", "Kind", "Path", "SHA-256", "Obtained", "Date", "Controls"])
     for a in eng.manifest["artifacts"]:
-        ev.append([a["id"], a["title"], a["kind"], a["path"], a["sha256"], a["obtained"], a.get("date", ""), " ".join(a.get("controls", []))])
+        ev.append([a["id"], privacy.redact(a["title"], eng), a["kind"], privacy.redact(a["path"], eng), a["sha256"], a["obtained"], a.get("date", ""), " ".join(a.get("controls", []))])
     for sheet in wb.worksheets:
         for cell in sheet[1]:
             cell.font = Font(bold=True)
@@ -320,4 +325,4 @@ def _write_evidence_index(eng: Engagement, path: Path) -> None:
         w = csv.writer(fh)
         w.writerow(["id", "title", "kind", "path", "sha256", "obtained", "date", "cited_by"])
         for a in eng.manifest["artifacts"]:
-            w.writerow([a["id"], a["title"], a["kind"], a["path"], a["sha256"], a["obtained"], a.get("date", ""), " ".join(sorted(cited.get(a["id"], [])))])
+            w.writerow([a["id"], privacy.redact(a["title"], eng), a["kind"], privacy.redact(a["path"], eng), a["sha256"], a["obtained"], a.get("date", ""), " ".join(sorted(cited.get(a["id"], [])))])

@@ -25,8 +25,9 @@ This is a self-contained task. Input: an engagement folder and one control ID. O
 
 | Field | What goes in it |
 |---|---|
-| `design` | `effective` (true or false), `rationale` (one or two sentences), `evidence` (artifact IDs, usually the policy) |
-| `procedures` | list of `{method, text}`; methods are `inquiry`, `observation`, `inspection`, `reperformance`. Write them as they should appear in the report ("Inspected the offboarding ticket for each sampled termination to determine whether ...") |
+| `statement` | optional sentence printed as the control activity when the control title is not enough. Names no one but `management.name`. Contains no email address or phone number. Leave it empty to print the title |
+| `design` | `effective` (true or false), `rationale` (one or two sentences), `evidence` (artifact IDs, usually the policy). The rationale can be printed; same rule as `statement` |
+| `procedures` | list of `{method, text}`; methods are `inquiry`, `observation`, `inspection`, `reperformance`. Write them as they should appear in a Type 2 report ("Inspected the offboarding ticket for each sampled termination to determine whether ..."). Same identification rule as `statement` |
 | `attributes` | `{"A": "...", "B": "..."}` |
 | `items` | one entry per sampled item: `results` per attribute, `evidence` IDs, optional `note` |
 | `population_check` | `{complete, rationale, evidence}`, required when the plan uses a population file in a Type 2 |
@@ -44,9 +45,10 @@ Attributes are testable yes/no statements tied to the control text:
 - Good: "Access to all production systems was removed within one business day of the termination date."
 - Weak: "Offboarding was handled appropriately."
 
-Exception descriptions are printed in Section IV of the report. State the count, the item, the facts and the requirement:
+Exception descriptions are printed in Section IV of a Type 2 report, and in Section V when management responded. State the count, the item, the facts and the requirement. Name the item id, not a person. Put the person's name, inbox or phone number in `observations`.
 - Good: "For 1 of 5 terminations sampled (T-003), production access was removed 9 days after the termination date; the policy requires removal within one business day."
 - Weak: "Access removal was late."
+- Rejected: "Manoj Tutika (manoj@vendor.example) confirmed two-factor authentication would be enabled." Write "The vendor confirmed two-factor authentication would be enabled on 6 October 2026." and put the name and inbox in `observations`.
 
 ## Examples
 

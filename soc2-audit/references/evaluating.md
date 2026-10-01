@@ -39,6 +39,6 @@ When unsure between two opinions, choose the more conservative one and explain t
 }
 ```
 
-The `basis` paragraph is printed in the report under "Basis for Qualified Opinion" (or Adverse, or Disclaimer of). Write it in the firm's voice: what the description says, what testing found, and which criterion was affected. Leave it empty for an unmodified opinion.
+The `basis` paragraph is printed in the report under "Basis for Qualified Opinion" (or Adverse, or Disclaimer of). Write it in the firm's voice: what the description says, what testing found, and which criterion was affected. Leave it empty for an unmodified opinion. It names no one but `management.name`, and it contains no email address or phone number. A scope limitation in this file follows the same rule.
 
 Every in-scope criterion must be covered by at least one tested control or appear in `criteria_not_met`; `validate --final` checks this.
