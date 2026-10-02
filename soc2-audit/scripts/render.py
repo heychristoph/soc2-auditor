@@ -142,19 +142,24 @@ def _report_data(eng: Engagement, text: dict, final: bool) -> dict:
           {"kind": "signature", "lines": [model, "AI Auditor", report_date, "Not an official SOC 2 audit."]}]
     section1 = {"title": f(s1["title"]), "blocks": b}
 
-    # Section II
+    # Section II. A draft description is not a management assertion and must
+    # not be rendered as though management signed one.
     s2 = text["section2"]
-    items = [s2["items"]["description"], s2["items"]["design"]] + ([s2["items"]["operating"]] if t2 else [])
-    if not t2:
-        items[-1] = items[-1].rstrip(";") + "."
-    section2 = {"title": f(s2["title"]), "blocks": [
-        {"kind": "para", "text": f(s2["intro"])}, {"kind": "para", "text": f(s2["confirm"])},
-        {"kind": "list", "items": [f(x) for x in items], "enum": True},
-        {"kind": "signature", "lines": [mgmt_name, mgmt_title, report_date]}]}
+    sys_ = privacy.report_system(eng)
+    if sys_ and sys_.get("status") == "management-approved":
+        items = [s2["items"]["description"], s2["items"]["design"]] + ([s2["items"]["operating"]] if t2 else [])
+        if not t2:
+            items[-1] = items[-1].rstrip(";") + "."
+        section2 = {"title": f(s2["title"]), "blocks": [
+            {"kind": "para", "text": f(s2["intro"])}, {"kind": "para", "text": f(s2["confirm"])},
+            {"kind": "list", "items": [f(x) for x in items], "enum": True},
+            {"kind": "signature", "lines": [mgmt_name, mgmt_title, report_date]}]}
+    else:
+        section2 = {"title": f(s2["title"]) + " — Pending Management Approval", "blocks": [
+            {"kind": "para", "text": "Management has not approved the system description or supplied a signed assertion for this provisional AI assessment. No management assertion is made in this section."}]}
 
     # Section III. A compliance-system draft is evidence, not the description readers see.
     s3 = text["section3"]
-    sys_ = privacy.report_system(eng)
     blocks = []
     if not sys_:
         blocks.append({"kind": "para", "text": f(s3["omitted"])})

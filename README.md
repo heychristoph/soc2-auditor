@@ -1,5 +1,7 @@
 # soc2-auditor
 
+Example AI Audit report: [DoneThat SOC 2 Type 1](https://trust.donethat.ai/en/documents/qE94tnY9AAEAGQAAAaD7eRKWtWoj5-GG).
+
 An agent skill that runs an AI Audit modeled on a SOC 2 Type 1 or Type 2 examination: it pulls evidence from the client's compliance platform, tests every control against the Trust Services Criteria, and produces a PDF signed by the model that ran it. The report says it is an AI Audit, not an official SOC 2 audit.
 
 It follows the open [Agent Skills](https://agentskills.io/specification) format, so the same `soc2-audit/` folder works with Claude Code, Codex, Gemini CLI, Cursor, GitHub Copilot and other agents that read `SKILL.md`. All deterministic work runs in plain Python scripts, so nothing depends on one vendor's agent features.
